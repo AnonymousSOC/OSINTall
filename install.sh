@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# OSINTALL Installer for Kali Linux & Debian-based Distributions
+# GitHub: https://github.com/your-username/osintall
+# ==============================================================================
+
+set -e
+
+# ANSI Color Codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
+
+# Print Banner
+clear
+echo -e "${CYAN}${BOLD}"
+cat << "EOF"
+  ██████╗ ███████╗██╗███╗   ██╗████████╗ █████╗ ██╗     ██╗     
+ ██╔═══██╗██╔════╝██║████╗  ██║╚══██╔══╝██╔══██╗██║     ██║     
+ ██║   ██║███████╗██║██╔██╗ ██║   ██║   ███████║██║     ██║     
+ ██║   ██║╚════██║██║██║╚██╗██║   ██║   ██╔══██║██║     ██║     
+ ╚██████╔╝███████║██║██║ ╚████║   ██║   ██║  ██║███████╗███████╗
+  ╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝
+EOF
+echo -e "${PURPLE}  [!] Automated Installer for Kali Linux & Security Distributions${NC}"
+echo -e "${BLUE}  ================================================================${NC}"
+echo ""
+
+# 1. Check Root Privileges
+if [ "$EUID" -ne 0 ]; then
+    echo -e "${RED}[ERROR] Please run the installer with root privileges: sudo ./install.sh${NC}"
+    exit 1
+fi
+
+INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BIN_PATH="/usr/local/bin/osintall"
+
+echo -e "${BLUE}[*] Target Installation Directory:${NC} ${INSTALL_DIR}"
+
+# 2. Update System Package Lists
+echo -e "\n${YELLOW}[+] Step 1/5: Updating system package index (apt update)...${NC}"
+apt-get update -y || {
+    echo -e "${RED}[!] Warning: apt update had warnings, continuing with installation...${NC}"
+}
+
+# 3. Install Required System Dependencies
+echo -e "\n${YELLOW}[+] Step 2/5: Installing system packages & OSINT binary tools...${NC}"
+APT_PACKAGES=(
+    "python3"
+    "python3-pip"
+    "python3-venv"
+    "python3-dev"
+    "git"
+    "curl"
+    "wget"
+    "jq"
+    "whois"
+    "dnsutils"
+    "libimage-exiftool-perl"
+)
+
+for pkg in "${APT_PACKAGES[@]}"; do
+    if dpkg -s "$pkg" >/dev/null 2>&1; then
+        echo -e "  ${GREEN}[✓] System package already installed:${NC} $pkg"
+    else
+        echo -e "  ${CYAN}[+] Installing:${NC} $pkg..."
+        apt-get install -y "$pkg" || echo -e "${RED}[!] Could not install $pkg via apt.${NC}"
+    fi
+done
+
+# 4. Optional Kali Linux OSINT Tool Suite
+echo -e "\n${YELLOW}[+] Step 3/5: Checking optional Kali OSINT tool packages...${NC}"
+OPTIONAL_KALI_TOOLS=(
+    "subfinder"
+    "theharvester"
+    "sherlock"
+    "amass"
+    "spiderfoot"
+    "gitleaks"
+)
+
+for tool in "${OPTIONAL_KALI_TOOLS[@]}"; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        echo -e "  ${GREEN}[✓] Integrated CLI tool found:${NC} $tool"
+    else
+        echo -e "  ${PURPLE}[i] Attempting to install optional tool:${NC} $tool..."
+        apt-get install -y "$tool" 2>/dev/null || echo -e "  ${YELLOW}[-] $tool not found in apt repo (OSINTALL built-in engine will be used).${NC}"
+    fi
+done
+
+# 5. Setup Python Virtual Environment (Fixes Debian/Kali PEP 668 externally-managed-environment)
+echo -e "\n${YELLOW}[+] Step 4/5: Configuring Python environment and installing Python modules...${NC}"
+VENV_DIR="${INSTALL_DIR}/.venv"
+
+if [ ! -d "$VENV_DIR" ]; then
+    echo -e "  ${CYAN}[+] Creating isolated Python virtual environment in .venv...${NC}"
+    python3 -m venv "$VENV_DIR"
+fi
+
+# Activate Virtual Environment & Install Requirements
+"$VENV_DIR/bin/pip" install --upgrade pip setuptools wheel
+echo -e "  ${CYAN}[+] Installing Python dependencies from requirements.txt...${NC}"
+"$VENV_DIR/bin/pip" install -r "${INSTALL_DIR}/requirements.txt"
+
+# Make sure main script is executable
+chmod +x "${INSTALL_DIR}/osintall.py"
+
+# 6. Create Global Wrapper in /usr/local/bin/osintall
+echo -e "\n${YELLOW}[+] Step 5/5: Creating global system command '/usr/local/bin/osintall'...${NC}"
+cat << EOF > "$BIN_PATH"
+#!/usr/bin/env bash
+# Global launcher for OSINTALL
+"${VENV_DIR}/bin/python3" "${INSTALL_DIR}/osintall.py" "\$@"
+EOF
+
+chmod +x "$BIN_PATH"
+
+echo -e "\n${GREEN}${BOLD}[✔] SUCCESS: OSINTALL installation complete!${NC}"
+echo -e "${CYAN}----------------------------------------------------------------${NC}"
+echo -e "You can now run OSINTALL from anywhere by typing: ${BOLD}${GREEN}osintall${NC}"
+echo -e ""
+echo -e "Quick Usage Examples:"
+echo -e "  ${BOLD}osintall${NC}                           # Launch Interactive Terminal UI"
+echo -e "  ${BOLD}osintall -d example.com${NC}            # Domain & Network Intelligence scan"
+echo -e "  ${BOLD}osintall -u targetuser${NC}             # Identity & SOCMINT username scan"
+echo -e "  ${BOLD}osintall -e target@domain.com${NC}      # Email verification & breach check"
+echo -e "  ${BOLD}osintall -f photo.jpg${NC}              # EXIF & Geolocation analysis"
+echo -e "  ${BOLD}osintall --help${NC}                    # Show all command-line options"
+echo -e "${CYAN}----------------------------------------------------------------${NC}"
