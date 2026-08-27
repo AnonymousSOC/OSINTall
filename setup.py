@@ -17,7 +17,7 @@ setup(
     description="All-in-One OSINT Reconnaissance Framework for Kali Linux",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/your-username/osintall",
+    url="https://github.com/AnonymousSOC/OSINTall",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

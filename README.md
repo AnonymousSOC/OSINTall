@@ -41,7 +41,7 @@ Clone the repository and run the automated installer. The installer updates pack
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/<your-username>/OSINTall.git
+git clone https://github.com/AnonymousSOC/OSINTall.git
 
 # 2. Navigate to the project directory
 cd OSINTall
@@ -127,7 +127,7 @@ git init
 git add .
 git commit -m "Initial release of OSINTall framework"
 git branch -M main
-git remote add origin https://github.com/<YOUR-GITHUB-USERNAME>/OSINTall.git
+git remote add origin https://github.com/AnonymousSOC/OSINTall.git
 git push -u origin main
 ```
 

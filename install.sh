@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # OSINTALL Installer for Kali Linux & Debian-based Distributions
-# GitHub: https://github.com/your-username/osintall
+# GitHub: https://github.com/AnonymousSOC/OSINTall
 # ==============================================================================
 
 set -e
