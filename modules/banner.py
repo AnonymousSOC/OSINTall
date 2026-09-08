@@ -34,7 +34,7 @@ BANNER_ART = r"""
 """
 
 TAGLINE = "Universal Open Source Intelligence Reconnaissance Framework | Kali Linux"
-VERSION = "v2.1.0"
+VERSION = "v2.2.0"
 
 # Global proxy setting (can be set via CLI --proxy)
 GLOBAL_PROXY = None

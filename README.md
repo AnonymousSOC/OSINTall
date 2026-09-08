@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">🕵️ OSINTALL v2.1</h1>
+  <h1 align="center">🕵️ OSINTALL v2.2</h1>
   <p align="center">
     <strong>Universal Open Source Intelligence (OSINT) Reconnaissance Framework for Kali Linux</strong>
   </p>
@@ -8,7 +8,7 @@
     <img src="https://img.shields.io/badge/Python-3.8%2B-brightgreen?style=for-the-badge&logo=python" alt="Python">
     <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License">
     <img src="https://img.shields.io/badge/Interface-CLI%20%26%20Interactive%20TUI-purple?style=for-the-badge" alt="Interface">
-    <img src="https://img.shields.io/badge/Version-v2.1.0-orange?style=for-the-badge" alt="Version">
+    <img src="https://img.shields.io/badge/Version-v2.2.0-orange?style=for-the-badge" alt="Version">
   </p>
 </p>
 
@@ -18,7 +18,7 @@
 
 **OSINTALL** is a modular, high-performance Open Source Intelligence (OSINT) framework built specifically for security professionals, penetration testers, red teamers, and OSINT investigators on **Kali Linux** and Debian-based systems.
 
-It combines multi-source passive DNS/network intelligence, live host probing, CNAME subdomain takeover auditing, IP/ASN geolocation, Shodan InternetDB zero-key open port & CVE discovery, web technology/CMS fingerprinting, 40+ platform username correlation with false-positive mitigation, international telephone intelligence (`TELINT`), free cybercrime infostealer malware breach detection, native token/secret pattern scanning, offline interactive Leaflet.js GPS mapping, historical sensitive endpoint mining, and an interactive **Maltego-style Vis.js relationship graph** inside an executive dark-mode HTML dashboard.
+It combines multi-source passive DNS/network intelligence, live host probing, CNAME subdomain takeover auditing, IP/ASN geolocation, Reverse IP co-hosting discovery, Shodan InternetDB zero-key open port & CVE discovery, web technology/CMS fingerprinting, Multi-Cloud storage bucket auditing (`CLOUDINT` for AWS S3, Google Cloud, Azure Blob), zero-key threat intelligence and malware reputation scoring (Abuse.ch URLhaus & ThreatFox), automated search dorks (`DORKINT`), 40+ platform username correlation with false-positive mitigation, international telephone intelligence (`TELINT`), free cybercrime infostealer malware breach detection, native token/secret pattern scanning, offline interactive Leaflet.js GPS mapping, historical sensitive endpoint mining, Maltego Entity CSV exports, and an interactive **Maltego-style Vis.js relationship graph** inside an executive dark-mode HTML dashboard.
 
 ---
 
@@ -26,7 +26,10 @@ It combines multi-source passive DNS/network intelligence, live host probing, CN
 
 | Domain / Category | Tools & Services Covered | Description |
 |---|---|---|
-| **Domain & Network Intelligence** | `crt.sh`, `AlienVault OTX`, `HackerTarget`, `Shodan InternetDB`, `Censys`, `WHOIS/RDAP`, `IP-API`, `DNS` | Multi-source subdomain discovery, active A-record host resolution, CNAME subdomain takeover vulnerability auditing, IP Geolocation & ASN discovery, zero-key open port & CVE discovery (InternetDB), SSL/TLS certificate validity checks, SPF/DMARC domain spoofing audits, and HTTP security header analysis. |
+| **Domain & Network Intelligence** | `crt.sh`, `AlienVault OTX`, `HackerTarget`, `Shodan InternetDB`, `Censys`, `WHOIS/RDAP`, `IP-API`, `DNS` | Multi-source subdomain discovery, active A-record host resolution, CNAME subdomain takeover vulnerability auditing, IP Geolocation & ASN discovery, Reverse IP co-hosting discovery (adjacent server domains), zero-key open port & CVE discovery (InternetDB), SSL/TLS certificate validity checks, SPF/DMARC domain spoofing audits, and HTTP security header analysis. |
+| **Cloud Storage Recon (CLOUDINT)** | `AWS S3`, `Google Cloud Storage (GCS)`, `Azure Blob Storage` | Automated permutation engine probing public cloud storage buckets, identifying public listings, unauthenticated read permissions (`200 OK`), and existing protected accounts (`403 Forbidden`). |
+| **Threat Intelligence & Malware Scoring** | `Abuse.ch URLhaus`, `Abuse.ch ThreatFox`, `VirusTotal`, `AbuseIPDB` | Zero-key querying of global cybercrime repositories detecting active malware download URLs, botnet C2 nodes, Indicators of Compromise (IoCs), and automated Threat Severity Risk Scoring (0 to 100). |
+| **Search Dorking (DORKINT)** | `Google Dorks`, `GitHub Code Search`, `Shodan SSL Dorks` | Automated generator for targeted search queries hunting confidential documents (`.pdf`, `.xlsx`), exposed environment files (`.env`, `.sql`, `.bak`), admin/login portals, Swagger APIs, and GitHub token leaks. |
 | **Web Technologies & CMS** | `Wappalyzer signatures`, `HTTP headers`, `DOM inspection` | Passive fingerprinting of Content Management Systems (WordPress, Drupal, Joomla, Shopify, Ghost), web frameworks (React, Vue, Next.js, Angular, Django, Laravel, Express), web servers (Nginx, Apache, LiteSpeed, IIS), and CDNs (Cloudflare, CloudFront, Akamai). |
 | **Phone Recon (TELINT)** | `E.164 Engine`, `Truecaller`, `Sync.me`, `WhatsApp`, `Telegram`, `Viber`, `PhoneInfoga` | International phone number parsing, country dial-code mapping, carrier/line-type indicators (Mobile vs Landline vs Toll-Free), and direct links for messaging app footprints and caller ID directories. |
 | **Identity & SOCMINT** | `Sherlock`, `Holehe`, `Maigret`, `WhatsMyName`, `Gravatar`, `Hunter.io`, `Epieos`, `SocialBlade` | Concurrent username search across 40+ platforms with redirect and soft-404 false-positive mitigation, email format & MX verification, Gravatar MD5 profile detection, and infostealer malware infection correlation. |
@@ -34,7 +37,7 @@ It combines multi-source passive DNS/network intelligence, live host probing, CN
 | **GEOINT & IMINT** | `ExifTool`, `Leaflet.js`, `Google Lens`, `Yandex Images`, `TinEye`, `PimEyes`, `FaceCheck.ID`, `SunCalc` | Image EXIF metadata parsing (camera model, lens, software tampering), GPS latitude/longitude extraction, automatic generation of local interactive Leaflet.js HTML map pins, and reverse image search toolkits. |
 | **Code & Secret Leaks** | `Native Regex Scanner`, `Gitleaks`, `TruffleHog`, `grep.app`, `Sourcegraph`, `PublicWWW` | Native pattern scanner for AWS keys, GitHub PATs, Google API keys, Slack tokens, Stripe keys, and Private Keys on local files/directories, plus code search engine queries. |
 | **Dark Web & Web Archives** | `Wayback Machine (CDX)`, `Tor SOCKS5`, `Ahmia`, `Torry`, `OnionSearch`, `DuckDuckGo Onion` | Historical snapshot extraction with sensitive file extension filtering (`.env`, `.sql`, `.bak`, `.pdf`, `.xls`), automated sensitive endpoint & high-risk query parameter mining, local Tor proxy status detection, and .onion search engines. |
-| **Visual Frameworks & Graphs** | `Vis.js Network`, `Maltego`, `SpiderFoot`, `Recon-ng`, `OSINT Framework` | Built-in interactive draggable node relationship graph embedded in HTML reports, plus launchers and deep links for top graph frameworks. |
+| **Visual Frameworks & Exports** | `Vis.js Network`, `Maltego Entity CSV`, `Flat CSV`, `SpiderFoot`, `Recon-ng` | Built-in interactive draggable node relationship graph in HTML reports, Maltego-compatible CSV generation for instant drag-and-drop import on Kali Linux, and spreadsheet-ready flat CSV exports. |
 
 ---
 
@@ -69,8 +72,20 @@ osintall
 ### 2. Direct CLI One-Liners
 
 ```bash
-# Full Domain Recon (DNS, Subdomains, IP Geolocation, Shodan InternetDB Ports/CVEs, Tech Stack, SSL, Headers)
+# Full Domain Recon (DNS, Subdomains, IP Geolocation, Shodan InternetDB Ports/CVEs, Reverse IP, Tech Stack, SSL, Headers)
 osintall -d example.com
+
+# Multi-Cloud Storage Bucket Audit (AWS S3, Google Cloud, Azure Blob)
+osintall -c example
+
+# Zero-Key Threat Intelligence & Abuse.ch Malware Reputation Scoring
+osintall --threat example.com
+
+# Automated Google & GitHub Search Dorks (DORKINT)
+osintall --dorks example.com
+
+# Export Full Recon to HTML Dashboard, Flat CSV, and Maltego Entity CSV
+osintall -d example.com --csv
 
 # Phone Number Intelligence: Carrier, E.164, WhatsApp & Telegram Footprints
 osintall -n "+14155552671"
@@ -107,15 +122,20 @@ osintall --frameworks
 
 ---
 
-## 📊 Executive HTML Dashboard & Visual Graph Reporting
+## 📊 Executive HTML Dashboard, CSV & Maltego Reporting
 
 OSINTALL automatically compiles findings into:
 - **Interactive Dark-Mode HTML Dashboard**: `reports/osint_report_<target>_<timestamp>.html`
-  - **Embedded Vis.js Node Relationship Graph**: Draggable, zoomable topology connecting target, IPs, ASNs, open ports, CVEs, subdomains, technologies, and compromised credentials.
+  - **Embedded Vis.js Node Relationship Graph**: Draggable, zoomable topology connecting target, IPs, ASNs, open ports, CVEs, cloud buckets, threat IoCs, subdomains, technologies, and compromised credentials.
+  - **Cloud Storage Audit Card**: Direct links and exposure badges (`PUBLIC LEAK` vs `PROTECTED`).
+  - **Threat Intelligence Card**: Threat Severity Score meter (0-100), active malware URLs, and ThreatFox IoC tables.
+  - **Automated Search Dorks Card**: One-click direct search links.
   - **Shodan InternetDB Telemetry**: Open ports, software CPEs, and CVE tags.
   - **Detected Web Technologies**: CMS, web frameworks, and CDN infrastructure.
   - **TELINT Intelligence Card**: Formatted telephony numbers, carrier indicators, and messaging app profile links.
   - **Security Badges & Tables**: SPF, DMARC, SSL validity, and live host indicators.
+- **Maltego-Ready Entity CSV**: `reports/maltego_entities_<target>_<timestamp>.csv` (ready for drag-and-drop `Import Graph from CSV` in Maltego on Kali Linux).
+- **Flat CSV Spreadsheet**: `reports/osint_report_<target>_<timestamp>.csv` (ideal for spreadsheet analysis and reporting).
 - **Structured JSON**: `reports/osint_report_<target>_<timestamp>.json`
 - **Interactive Leaflet Map**: `reports/geoint_map_<target>_<timestamp>.html` (generated whenever GPS metadata is detected).
 

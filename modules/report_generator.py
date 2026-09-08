@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-OSINTALL - Report Generation Module (Enhanced v2.1)
-Exports reconnaissance findings to structured JSON and modern dark-mode HTML executive dashboards
-featuring an interactive Maltego-style Vis.js Node Relationship Graph, InternetDB open ports,
-Web Tech Stack detection, and Phone Reconnaissance details.
+OSINTALL - Report Generation Module (Enhanced v2.2)
+Exports reconnaissance findings to structured JSON, flat CSV, Maltego-compatible CSV,
+and modern dark-mode HTML executive dashboards featuring an interactive Vis.js Node Relationship Graph,
+Cloud Storage Buckets, Threat Intelligence, and Search Dorks.
 """
 
 import os
+import csv
 import json
 import datetime
 import html
@@ -189,6 +190,33 @@ def build_graph_elements(data: dict, target_name: str) -> tuple:
         })
         edges.append({"from": "target", "to": "malware_alert", "label": "compromised by"})
 
+    # 8. Cloud Storage Bucket Nodes
+    cloud_buckets = data.get("cloud_buckets", []) or data.get("buckets", [])
+    for idx, b in enumerate(cloud_buckets[:8]):
+        b_id = f"cloud_{idx}"
+        b_open = b.get("status") == "OPEN"
+        nodes.append({
+            "id": b_id,
+            "label": f"Cloud: {b.get('provider')}\n{b.get('bucket')}\n{'[PUBLIC LEAK]' if b_open else '[PROTECTED]'}",
+            "color": "#da3633" if b_open else "#d29922",
+            "shape": "box",
+            "font": {"color": "#ffffff", "size": 11, "bold": b_open}
+        })
+        edges.append({"from": "target", "to": b_id, "label": "cloud storage"})
+
+    # 9. Threat Intelligence Nodes
+    threat_data = data.get("threat_intel", {}) or data.get("assessment", {})
+    t_score = threat_data.get("threat_score") or threat_data.get("score") or data.get("threat_score", 0)
+    if t_score > 0:
+        nodes.append({
+            "id": "threat_reputation",
+            "label": f"⚠️ Threat Score: {t_score}/100\n{threat_data.get('threat_label', 'Abuse.ch Flagged')}",
+            "color": "#da3633" if t_score >= 50 else "#d29922",
+            "shape": "diamond",
+            "font": {"color": "#ffffff", "size": 12, "bold": True}
+        })
+        edges.append({"from": "target", "to": "threat_reputation", "label": "threat reputation"})
+
     return nodes, edges
 
 def generate_dashboard_html(data: dict, target_name: str) -> str:
@@ -237,6 +265,20 @@ def generate_dashboard_html(data: dict, target_name: str) -> str:
     infostealer = data.get("infostealer", {}) or data.get("infostealer_exposure", {})
     if not infostealer and "breach_search" in data:
         infostealer = data["breach_search"].get("infostealer", {})
+
+    # Cloud Buckets
+    cloud_buckets = data.get("cloud_buckets", []) or data.get("buckets", [])
+    open_buckets = [b for b in cloud_buckets if b.get("status") == "OPEN"]
+
+    # Threat Intelligence & IoCs
+    threat_intel = data.get("threat_intel", {}) or data.get("assessment", {})
+    threat_score = threat_intel.get("score") if threat_intel.get("score") is not None else threat_intel.get("threat_score", data.get("threat_score"))
+    urlhaus = data.get("urlhaus", {}) or threat_intel.get("urlhaus", {})
+    threatfox = data.get("threatfox", {}) or threat_intel.get("threatfox", {})
+
+    # Reverse IP & Search Dorks
+    reverse_ip = data.get("reverse_ip", [])
+    search_dorks = data.get("search_dorks", [])
 
     # Graph elements
     nodes, edges = build_graph_elements(data, target_name)
@@ -507,6 +549,23 @@ def generate_dashboard_html(data: dict, target_name: str) -> str:
         </div>
         """
 
+    # Critical Public Cloud Leak Alert
+    if open_buckets:
+        html_code += f"""
+        <div class="alert-box alert-danger">
+            <strong>🚨 Critical Cloud Exposure Alert:</strong> {len(open_buckets)} public cloud storage bucket(s) identified with unauthenticated read/listing enabled. Immediate remediation required.
+        </div>
+        """
+
+    # Threat Reputation Alert
+    if threat_score is not None and threat_score > 0:
+        level_class = "alert-danger" if threat_score >= 50 else "alert-warning"
+        html_code += f"""
+        <div class="alert-box {level_class}">
+            <strong>⚠️ Threat Intelligence Alert:</strong> Target scored {threat_score}/100 on cybercrime threat reputation databases (Abuse.ch URLhaus / ThreatFox).
+        </div>
+        """
+
     # Takeover alerts if detected
     if takeover_warnings:
         html_code += '<div class="alert-box alert-danger"><strong>⚠️ Subdomain Takeover Warning:</strong> One or more subdomains point to third-party services with dangling CNAME records:<ul>'
@@ -555,6 +614,80 @@ def generate_dashboard_html(data: dict, target_name: str) -> str:
             </div>
         </div>
         """
+
+    # CLOUD STORAGE BUCKET AUDIT CARD (CLOUDINT)
+    if cloud_buckets:
+        html_code += """
+        <div class="section-card">
+            <h2>☁️ Multi-Cloud Storage Buckets & Exposure (CLOUDINT)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cloud Provider</th>
+                        <th>Bucket / Container Name</th>
+                        <th>Exposure Status</th>
+                        <th>Details & Direct Link</th>
+                    </tr>
+                </thead>
+                <tbody>
+        """
+        for b in cloud_buckets:
+            b_open = b.get("status") == "OPEN"
+            status_badge = "<span class='badge badge-red'>🚨 PUBLIC LEAK (200)</span>" if b_open else "<span class='badge badge-yellow'>🔒 PROTECTED (403)</span>"
+            url_link = f"<a href='{html.escape(b.get('url', ''))}' target='_blank' style='color:var(--accent-blue);'>{html.escape(b.get('url', ''))}</a>" if b.get('url') else html.escape(b.get("details", ""))
+            html_code += f"""
+                <tr>
+                    <td><strong>{html.escape(b.get("provider", ""))}</strong></td>
+                    <td><code>{html.escape(b.get("bucket", ""))}</code></td>
+                    <td>{status_badge}</td>
+                    <td>{url_link}</td>
+                </tr>
+            """
+        html_code += """
+                </tbody>
+            </table>
+        </div>
+        """
+
+    # THREAT INTELLIGENCE & REPUTATION CARD
+    if threat_score is not None or urlhaus.get("url_count", 0) > 0 or threatfox.get("ioc_count", 0) > 0:
+        score_val = threat_score if threat_score is not None else 0
+        score_color = "var(--accent-red)" if score_val >= 50 else ("var(--accent-yellow)" if score_val > 0 else "var(--accent-green)")
+        html_code += f"""
+        <div class="section-card">
+            <h2>🛡️ Threat Intelligence & Malware Reputation</h2>
+            <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-subtle); border-radius: 6px; border-left: 4px solid {score_color};">
+                <div style="font-size: 1.1rem; font-weight: 600; color: {score_color};">
+                    Threat Severity Score: {score_val} / 100
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+                    Aggregated across Abuse.ch URLhaus malware repository and ThreatFox Indicators of Compromise.
+                </div>
+            </div>
+        """
+        if urlhaus.get("urls"):
+            html_code += """
+            <h3 style="font-size: 1rem; color: var(--accent-red); margin-top: 15px;">🦠 Active / Historical Malware URLs (URLhaus)</h3>
+            <table>
+                <thead><tr><th>Malicious URL</th><th>Status</th><th>Threat</th></tr></thead>
+                <tbody>
+            """
+            for u in urlhaus.get("urls", [])[:6]:
+                u_stat = "<span class='badge badge-red'>Online</span>" if u.get("url_status") == "online" else "<span class='badge badge-green'>Offline</span>"
+                html_code += f"<tr><td><code>{html.escape(u.get('url', ''))}</code></td><td>{u_stat}</td><td>{html.escape(u.get('threat', 'Malware'))}</td></tr>"
+            html_code += "</tbody></table>"
+
+        if threatfox.get("iocs"):
+            html_code += """
+            <h3 style="font-size: 1rem; color: var(--accent-yellow); margin-top: 15px;">🎯 ThreatFox IoC Signatures & Malware Families</h3>
+            <table>
+                <thead><tr><th>Indicator (IoC)</th><th>Threat Type</th><th>Malware Family</th><th>Confidence</th></tr></thead>
+                <tbody>
+            """
+            for ioc in threatfox.get("iocs", [])[:6]:
+                html_code += f"<tr><td><code>{html.escape(ioc.get('ioc', ''))}</code></td><td>{html.escape(ioc.get('threat_type_desc', ioc.get('threat_type', '')))}</td><td><span class='badge badge-red'>{html.escape(ioc.get('malware_printable', 'Unknown'))}</span></td><td>{ioc.get('confidence_level', 0)}%</td></tr>"
+            html_code += "</tbody></table>"
+        html_code += "</div>"
 
     # SHODAN INTERNETDB TELEMETRY CARD (Zero-Key Port & CVE Discovery)
     if internetdb:
@@ -765,7 +898,43 @@ def generate_dashboard_html(data: dict, target_name: str) -> str:
         </div>
         """
 
-    # 6. Raw JSON Inspection Section
+    # 6. REVERSE IP CO-HOSTING CARD
+    if reverse_ip:
+        html_code += """
+        <div class="section-card">
+            <h2>🔄 Reverse IP Co-Hosting (Adjacent Server Domains)</h2>
+        """
+        for item in reverse_ip:
+            html_code += f"""
+            <h3 style="font-size: 0.95rem; color: var(--accent-cyan);">Server IP: <code>{html.escape(item.get('ip', ''))}</code></h3>
+            <div class="grid-pills" style="margin-bottom: 15px;">
+            """
+            for d in item.get("co_hosted_domains", [])[:15]:
+                html_code += f"<div class='pill-card'><span style='font-family:monospace;'>{html.escape(d)}</span></div>"
+            html_code += "</div>"
+        html_code += "</div>"
+
+    # 7. AUTOMATED SEARCH DORKS CARD (DORKINT)
+    if search_dorks:
+        html_code += """
+        <div class="section-card">
+            <h2>🔎 Targeted Search Dorks & Intelligence Queries (DORKINT)</h2>
+            <div class="grid-pills">
+        """
+        for d in search_dorks:
+            html_code += f"""
+                <a href="{html.escape(d.get('url', '#'))}" target="_blank" class="pill-card" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                    <div style="font-weight: 600; color: var(--accent-yellow);">{html.escape(d.get('category', ''))}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace;">{html.escape(d.get('dork', ''))}</div>
+                    <span style="color: var(--accent-blue); font-size: 0.8rem; align-self: flex-end;">Open Dork &rarr;</span>
+                </a>
+            """
+        html_code += """
+            </div>
+        </div>
+        """
+
+    # 8. Raw JSON Inspection Section
     html_code += f"""
         <details>
             <summary>📦 Full Raw Intelligence JSON Data (Expand)</summary>
@@ -839,4 +1008,122 @@ def save_html_report(data: dict, target_name: str) -> str:
         return filepath
     except Exception as e:
         print_error(f"Failed to save HTML report: {e}")
+        return ""
+
+def save_csv_report(data: dict, target_name: str) -> str:
+    """Exports structured findings to a flat CSV spreadsheet."""
+    reports_dir = ensure_reports_dir()
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    clean_target = "".join(c for c in target_name if c.isalnum() or c in ("-", "_", "."))
+    filename = f"osint_report_{clean_target}_{timestamp}.csv"
+    filepath = os.path.join(reports_dir, filename)
+
+    rows = [["Category", "Entity_Type", "Value", "Status_Or_Details", "Additional_Info"]]
+
+    # DNS
+    dns_records = data.get("dns", {})
+    for rtype, rlist in dns_records.items():
+        for r in rlist:
+            rows.append(["DNS", rtype, str(r), "Active", ""])
+
+    # IP Geolocation
+    for geo in data.get("ip_geolocation", []):
+        loc = f"{geo.get('city', '')}, {geo.get('country', '')}".strip(", ")
+        isp_asn = f"ASN: {geo.get('asn', '')} ({geo.get('isp', '')})"
+        rows.append(["Network", "IPv4Address", geo.get("ip", ""), loc, isp_asn])
+
+    # InternetDB
+    for idb in data.get("internetdb", []):
+        ip = idb.get("ip", "")
+        for port in idb.get("ports", []):
+            rows.append(["Network", "Port", f"{ip}:{port}", "Open", "Shodan InternetDB"])
+        for vuln in idb.get("vulns", []):
+            rows.append(["Vulnerability", "CVE", vuln, ip, "Shodan InternetDB"])
+
+    # Subdomains
+    for sub in data.get("subdomains", []):
+        rows.append(["Subdomain", "DNSName", sub, "Discovered", ""])
+    for s in data.get("subdomains_live", []):
+        cname = s.get("cname", "")
+        risk = s.get("takeover_risk", "")
+        rows.append(["Subdomain", "Live_DNSName", s.get("subdomain", ""), f"CNAME: {cname}", f"Takeover: {risk}" if risk else "Safe"])
+
+    # Tech Stack
+    for t in data.get("tech_stack", []):
+        rows.append(["Technology", t.get("category", "Software"), t.get("name", ""), t.get("evidence", ""), ""])
+
+    # Social Profiles
+    for p in data.get("found_profiles", []):
+        rows.append(["SOCMINT", "Profile", p.get("platform", ""), p.get("url", ""), ""])
+
+    # Cloud Buckets
+    cloud_buckets = data.get("cloud_buckets", []) or data.get("buckets", [])
+    for b in cloud_buckets:
+        rows.append(["CLOUDINT", b.get("provider", "Cloud Storage"), b.get("bucket", ""), b.get("status", ""), b.get("url", "")])
+
+    # Threat Intel
+    threat = data.get("threat_intel", {}) or data.get("assessment", {})
+    if threat:
+        rows.append(["ThreatIntel", "ThreatScore", f"{threat.get('score', data.get('threat_score', 0))}/100", threat.get("label", ""), ""])
+    for u in data.get("urlhaus", {}).get("urls", []):
+        rows.append(["ThreatIntel", "MalwareURL", u.get("url", ""), u.get("url_status", ""), u.get("threat", "")])
+    for ioc in data.get("threatfox", {}).get("iocs", []):
+        rows.append(["ThreatIntel", "ThreatFox_IoC", ioc.get("ioc", ""), ioc.get("malware_printable", ""), f"{ioc.get('confidence_level')}% confidence"])
+
+    # Phone Intel
+    if data.get("e164"):
+        rows.append(["TELINT", "PhoneNumber", data.get("e164", ""), data.get("country_name", ""), data.get("line_type", "")])
+
+    try:
+        with open(filepath, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerows(rows)
+        print_success(f"Flat CSV Report exported to: [bold cyan]{filepath}[/]")
+        return filepath
+    except Exception as e:
+        print_error(f"Failed to save CSV report: {e}")
+        return ""
+
+def save_maltego_csv(data: dict, target_name: str) -> str:
+    """Exports findings into a Maltego-compatible Entity CSV file for Kali Linux."""
+    reports_dir = ensure_reports_dir()
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    clean_target = "".join(c for c in target_name if c.isalnum() or c in ("-", "_", "."))
+    filename = f"maltego_entities_{clean_target}_{timestamp}.csv"
+    filepath = os.path.join(reports_dir, filename)
+
+    entities = [["Entity_Type", "Value", "Source", "Property_Notes"]]
+    # Target
+    entities.append(["maltego.Domain", target_name, "OSINTALL", "Primary Target"])
+
+    # IPs
+    for geo in data.get("ip_geolocation", []):
+        entities.append(["maltego.IPv4Address", geo.get("ip", ""), target_name, f"{geo.get('city')}, {geo.get('country')} (ASN: {geo.get('asn')})"])
+
+    # Subdomains
+    for sub in data.get("subdomains", []):
+        entities.append(["maltego.DNSName", sub, target_name, "Subdomain"])
+
+    # DNS NS & MX
+    for ns in data.get("dns", {}).get("NS", []):
+        entities.append(["maltego.NSRecord", ns, target_name, "Name Server"])
+    for mx in data.get("dns", {}).get("MX", []):
+        entities.append(["maltego.MXRecord", mx, target_name, "Mail Exchange"])
+
+    # Social Profiles
+    for p in data.get("found_profiles", []):
+        entities.append(["maltego.URL", p.get("url", ""), target_name, p.get("platform", "Social Profile")])
+
+    # Phone Number
+    if data.get("e164"):
+        entities.append(["maltego.PhoneNumber", data.get("e164", ""), target_name, data.get("country_name", "")])
+
+    try:
+        with open(filepath, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerows(entities)
+        print_success(f"Maltego Entity CSV exported to: [bold cyan]{filepath}[/]")
+        return filepath
+    except Exception as e:
+        print_error(f"Failed to save Maltego CSV: {e}")
         return ""

@@ -12,7 +12,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="osintall",
-    version="2.1.0",
+    version="2.2.0",
     author="OSINTALL Team",
     description="All-in-One OSINT Reconnaissance Framework for Kali Linux",
     long_description=long_description,

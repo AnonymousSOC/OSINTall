@@ -476,6 +476,90 @@ def query_urlscan_api(domain: str, api_key: str = "") -> dict:
         pass
     return {"status": "search_link", "url": f"https://urlscan.io/search/#{domain}"}
 
+def get_reverse_ip_cohosting(ip: str) -> list:
+    """Queries HackerTarget Reverse IP Lookup to find adjacent domains sharing the same server."""
+    if not ip or ip.startswith("127.") or ip.startswith("10.") or ip.startswith("192.168."):
+        return []
+    session = get_requests_session()
+    try:
+        url = f"https://api.hackertarget.com/reverseiplookup/?q={ip}"
+        resp = session.get(url, timeout=7)
+        if resp.status_code == 200 and resp.text:
+            text = resp.text.strip()
+            if "No DNS A records found" not in text and "API count exceeded" not in text and "error" not in text.lower():
+                domains = [line.strip().lower() for line in text.splitlines() if line.strip() and "." in line]
+                return sorted(list(set(domains)))[:25]
+    except Exception:
+        pass
+    return []
+
+def generate_search_dorks(domain: str) -> list:
+    """Generates targeted Google, GitHub, and Shodan dorks for sensitive data hunting."""
+    clean_domain = re.sub(r"^https?://", "", domain).split("/")[0].strip()
+    encoded = requests.utils.quote
+    dorks = [
+        {
+            "category": "Confidential Documents",
+            "description": "Sensitive PDFs, spreadsheets, Word docs marked confidential",
+            "dork": f'site:{clean_domain} (filetype:pdf OR filetype:xlsx OR filetype:docx) "confidential"',
+            "url": f"https://www.google.com/search?q={encoded(f'site:{clean_domain} (filetype:pdf OR filetype:xlsx OR filetype:docx) \"confidential\"')}"
+        },
+        {
+            "category": "Exposed Configs & Backups",
+            "description": "Exposed SQL dumps, environment files, backups, logs",
+            "dork": f'site:{clean_domain} (ext:sql OR ext:env OR ext:bak OR ext:log OR ext:key)',
+            "url": f"https://www.google.com/search?q={encoded(f'site:{clean_domain} (ext:sql OR ext:env OR ext:bak OR ext:log OR ext:key)')}"
+        },
+        {
+            "category": "Admin & Login Portals",
+            "description": "Admin dashboards, management interfaces, login forms",
+            "dork": f'site:{clean_domain} (inurl:admin OR inurl:login OR inurl:portal OR inurl:dashboard)',
+            "url": f"https://www.google.com/search?q={encoded(f'site:{clean_domain} (inurl:admin OR inurl:login OR inurl:portal OR inurl:dashboard)')}"
+        },
+        {
+            "category": "API Endpoints & Swagger",
+            "description": "API documentation, Swagger UI, GraphQL endpoints",
+            "dork": f'site:{clean_domain} (inurl:api OR inurl:swagger OR inurl:graphql OR inurl:actuator)',
+            "url": f"https://www.google.com/search?q={encoded(f'site:{clean_domain} (inurl:api OR inurl:swagger OR inurl:graphql OR inurl:actuator)')}"
+        },
+        {
+            "category": "Directory Indexing",
+            "description": "Open directory listings exposing server directories",
+            "dork": f'site:{clean_domain} intitle:"index of"',
+            "url": f"https://www.google.com/search?q={encoded(f'site:{clean_domain} intitle:\"index of\"')}"
+        },
+        {
+            "category": "GitHub Code & Token Leaks",
+            "description": "Exposed API keys, tokens, or credentials scoped to target",
+            "dork": f'"{clean_domain}" ("api_key" OR "secret" OR "token" OR "password")',
+            "url": f"https://github.com/search?q={encoded(f'\"{clean_domain}\" (\"api_key\" OR \"secret\" OR \"token\" OR \"password\")')}&type=code"
+        },
+        {
+            "category": "Shodan SSL Certificate",
+            "description": "Servers presenting an SSL certificate issued for the target domain",
+            "dork": f'ssl:"{clean_domain}"',
+            "url": f"https://www.shodan.io/search?query={encoded(f'ssl:\"{clean_domain}\"')}"
+        }
+    ]
+    return dorks
+
+def run_search_dorks(domain: str) -> dict:
+    """Standalone runner for targeted search dork generation."""
+    clean_domain = re.sub(r"^https?://", "", domain).split("/")[0].strip()
+    print_section(f"Targeted Search Dork Intelligence (DORKINT): {clean_domain}", icon="🔎")
+    dorks = generate_search_dorks(clean_domain)
+
+    table = Table(title=f"🔎 Automated Search Dorks ({clean_domain})", border_style="cyan", show_header=True)
+    table.add_column("Category", style="bold yellow", width=24)
+    table.add_column("Dork Pattern", style="white")
+    table.add_column("Direct Search Link", style="underline blue")
+
+    for d in dorks:
+        table.add_row(d["category"], d["dork"], d["url"])
+
+    console.print(table)
+    return {"target": clean_domain, "dorks": dorks}
+
 def run_domain_recon(domain: str) -> dict:
     """Main domain reconnaissance orchestrator."""
     config = load_config()
@@ -490,6 +574,7 @@ def run_domain_recon(domain: str) -> dict:
         "dns": {},
         "ip_geolocation": [],
         "internetdb": [],
+        "reverse_ip": [],
         "tech_stack": [],
         "email_security": {},
         "ssl_certificate": {},
@@ -500,6 +585,7 @@ def run_domain_recon(domain: str) -> dict:
         "takeover_warnings": [],
         "http_headers": {},
         "shodan": {},
+        "search_dorks": [],
         "links": {}
     }
 
@@ -559,6 +645,21 @@ def run_domain_recon(domain: str) -> dict:
                     if vulns:
                         idb_table.add_row("CVE Vulnerabilities", f"[bold red]{', '.join(vulns[:8])}[/]" + (f" (+{len(vulns)-8} more)" if len(vulns) > 8 else ""))
                     console.print(idb_table)
+
+        # Reverse IP Co-Hosting Discovery
+        print_info("Auditing Reverse IP Co-Hosting (adjacent domains sharing physical server)...")
+        for ip in primary_ips[:2]:
+            co_hosted = get_reverse_ip_cohosting(ip)
+            if co_hosted:
+                results["reverse_ip"].append({"ip": ip, "co_hosted_domains": co_hosted})
+
+        if results["reverse_ip"]:
+            for item in results["reverse_ip"]:
+                rev_table = Table(title=f"Co-Hosted Domains on Server ({item['ip']})", border_style="cyan")
+                rev_table.add_column("Adjacent Domain", style="bold white")
+                for d in item["co_hosted_domains"][:10]:
+                    rev_table.add_row(d)
+                console.print(rev_table)
 
     # 3. Email Security Audit (SPF & DMARC)
     txt_records = results["dns"].get("TXT", [])
@@ -713,7 +814,18 @@ def run_domain_recon(domain: str) -> dict:
         link_table.add_row(name, url)
     console.print(link_table)
 
-    # 10. Check Kali Built-in Tool Availability
+    # 10. Automated Search Dork Intelligence
+    print_info("Generating targeted Google & GitHub Search Dorks (DORKINT)...")
+    results["search_dorks"] = generate_search_dorks(domain)
+    dork_table = Table(title=f"Targeted Search Dork Intelligence ({domain})", border_style="cyan")
+    dork_table.add_column("Category", style="bold yellow", width=22)
+    dork_table.add_column("Dork Pattern", style="white")
+    dork_table.add_column("Direct Query URL", style="underline blue")
+    for d in results["search_dorks"][:5]:
+        dork_table.add_row(d["category"], d["dork"], d["url"])
+    console.print(dork_table)
+
+    # 11. Check Kali Built-in Tool Availability
     kali_tools = ["subfinder", "amass", "theharvester", "whois"]
     available_tools = [tool for tool in kali_tools if is_tool_available(tool)]
     if available_tools:
