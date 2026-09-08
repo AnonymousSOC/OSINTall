@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# OSINTALL Installer for Kali Linux & Debian-based Distributions
+# OSINTALL Installer for Kali Linux & Debian-based Distributions (v2.0)
 # GitHub: https://github.com/AnonymousSOC/OSINTall
 # ==============================================================================
 
@@ -27,7 +27,7 @@ cat << "EOF"
  ╚██████╔╝███████║██║██║ ╚████║   ██║   ██║  ██║███████╗███████╗
   ╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝
 EOF
-echo -e "${PURPLE}  [!] Automated Installer for Kali Linux & Security Distributions${NC}"
+echo -e "${PURPLE}  [!] Automated Installer for Kali Linux & Security Distributions (v2.0)${NC}"
 echo -e "${BLUE}  ================================================================${NC}"
 echo ""
 
@@ -79,9 +79,11 @@ OPTIONAL_KALI_TOOLS=(
     "subfinder"
     "theharvester"
     "sherlock"
+    "holehe"
     "amass"
     "spiderfoot"
     "gitleaks"
+    "tor"
 )
 
 for tool in "${OPTIONAL_KALI_TOOLS[@]}"; do
@@ -89,12 +91,12 @@ for tool in "${OPTIONAL_KALI_TOOLS[@]}"; do
         echo -e "  ${GREEN}[✓] Integrated CLI tool found:${NC} $tool"
     else
         echo -e "  ${PURPLE}[i] Attempting to install optional tool:${NC} $tool..."
-        apt-get install -y "$tool" 2>/dev/null || echo -e "  ${YELLOW}[-] $tool not found in apt repo (OSINTALL built-in engine will be used).${NC}"
+        apt-get install -y "$tool" 2>/dev/null || echo -e "  ${YELLOW}[-] $tool not found in apt repo (OSINTALL built-in native engine will be used).${NC}"
     fi
 done
 
 # 5. Setup Python Virtual Environment (Fixes Debian/Kali PEP 668 externally-managed-environment)
-echo -e "\n${YELLOW}[+] Step 4/5: Configuring Python environment and installing Python modules...${NC}"
+echo -e "\n${YELLOW}[+] Step 4/5: Configuring Python environment and installing dependencies...${NC}"
 VENV_DIR="${INSTALL_DIR}/.venv"
 
 if [ ! -d "$VENV_DIR" ]; then
@@ -107,28 +109,35 @@ fi
 echo -e "  ${CYAN}[+] Installing Python dependencies from requirements.txt...${NC}"
 "$VENV_DIR/bin/pip" install -r "${INSTALL_DIR}/requirements.txt"
 
-# Make sure main script is executable
+# Ensure reports directory exists with write permissions for regular users
+mkdir -p "${INSTALL_DIR}/reports"
+chmod 777 "${INSTALL_DIR}/reports"
+
+# Grant global read/execute on venv so non-root users can execute
+chmod -R a+rX "$VENV_DIR"
 chmod +x "${INSTALL_DIR}/osintall.py"
 
 # 6. Create Global Wrapper in /usr/local/bin/osintall
 echo -e "\n${YELLOW}[+] Step 5/5: Creating global system command '/usr/local/bin/osintall'...${NC}"
 cat << EOF > "$BIN_PATH"
 #!/usr/bin/env bash
-# Global launcher for OSINTALL
+# Global launcher for OSINTALL v2.0
 "${VENV_DIR}/bin/python3" "${INSTALL_DIR}/osintall.py" "\$@"
 EOF
 
 chmod +x "$BIN_PATH"
 
-echo -e "\n${GREEN}${BOLD}[✔] SUCCESS: OSINTALL installation complete!${NC}"
+echo -e "\n${GREEN}${BOLD}[✔] SUCCESS: OSINTALL v2.0 installation complete!${NC}"
 echo -e "${CYAN}----------------------------------------------------------------${NC}"
 echo -e "You can now run OSINTALL from anywhere by typing: ${BOLD}${GREEN}osintall${NC}"
 echo -e ""
 echo -e "Quick Usage Examples:"
-echo -e "  ${BOLD}osintall${NC}                           # Launch Interactive Terminal UI"
-echo -e "  ${BOLD}osintall -d example.com${NC}            # Domain & Network Intelligence scan"
-echo -e "  ${BOLD}osintall -u targetuser${NC}             # Identity & SOCMINT username scan"
-echo -e "  ${BOLD}osintall -e target@domain.com${NC}      # Email verification & breach check"
-echo -e "  ${BOLD}osintall -f photo.jpg${NC}              # EXIF & Geolocation analysis"
-echo -e "  ${BOLD}osintall --help${NC}                    # Show all command-line options"
+echo -e "  ${BOLD}osintall${NC}                                 # Interactive Terminal UI"
+echo -e "  ${BOLD}osintall -d example.com${NC}                  # Full Domain Recon (DNS, Subdomains, IP Geo, Headers)"
+echo -e "  ${BOLD}osintall -u targetuser${NC}                   # SOCMINT (40+ Platforms)"
+echo -e "  ${BOLD}osintall -e target@domain.com${NC}            # Email, MX, Gravatar & Infostealer checks"
+echo -e "  ${BOLD}osintall -f photo.jpg${NC}                    # EXIF & Offline Leaflet Map Pin"
+echo -e "  ${BOLD}osintall -s 'AKIAIOSFODNN7EXAMPLE'${NC}       # Native Regex Secret Scanner"
+echo -e "  ${BOLD}osintall -w example.com --sensitive${NC}        # Historical Sensitive File Discovery"
+echo -e "  ${BOLD}osintall --help${NC}                          # View all options"
 echo -e "${CYAN}----------------------------------------------------------------${NC}"

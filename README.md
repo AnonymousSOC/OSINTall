@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">🕵️ OSINTALL</h1>
+  <h1 align="center">🕵️ OSINTALL v2.0</h1>
   <p align="center">
     <strong>Universal Open Source Intelligence (OSINT) Reconnaissance Framework for Kali Linux</strong>
   </p>
@@ -8,6 +8,7 @@
     <img src="https://img.shields.io/badge/Python-3.8%2B-brightgreen?style=for-the-badge&logo=python" alt="Python">
     <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License">
     <img src="https://img.shields.io/badge/Interface-CLI%20%26%20Interactive%20TUI-purple?style=for-the-badge" alt="Interface">
+    <img src="https://img.shields.io/badge/Version-v2.0.0-orange?style=for-the-badge" alt="Version">
   </p>
 </p>
 
@@ -15,29 +16,29 @@
 
 ## 📖 Overview
 
-**OSINTALL** is a modular, high-performance Open Source Intelligence (OSINT) framework built specifically for security professionals, penetration testers, and OSINT researchers on **Kali Linux** and Debian-based systems.
+**OSINTALL** is a modular, high-performance Open Source Intelligence (OSINT) framework built specifically for security professionals, penetration testers, red teamers, and OSINT investigators on **Kali Linux** and Debian-based systems.
 
-It combines deep DNS/network intelligence, multi-platform username correlation, email verification, breach discovery, EXIF/GPS extraction, dark web indexing, and secret scanning into a unified, lightning-fast command-line and interactive Terminal UI.
+It combines multi-source passive DNS/network intelligence, live host probing, CNAME subdomain takeover auditing, IP/ASN geolocation, 40+ platform username correlation with false-positive mitigation, free cybercrime infostealer malware breach detection, native token/secret pattern scanning, offline interactive GPS mapping, and historical archive discovery into an executive dark-mode HTML dashboard and interactive Terminal UI.
 
 ---
 
-## ⚡ Integrated Tool Matrix & Capabilities
+## ⚡ Integrated Capabilities Matrix
 
 | Domain / Category | Tools & Services Covered | Description |
 |---|---|---|
-| **Domain & Network Intelligence** | `Shodan`, `Censys`, `FOFA`, `Amass`, `theHarvester`, `Subfinder`, `crt.sh`, `DNSDumpster`, `SecurityTrails`, `WhoisXML`, `ViewDNS`, `urlscan.io`, `Lookyloo`, `WiGLE` | Full DNS lookup, RDAP/WHOIS extraction, Certificate Transparency subdomains, HTTP security headers, BSSID/SSID lookups, and Shodan/Censys queries. |
-| **Identity & SOCMINT** | `Sherlock`, `Blackbird`, `Maigret`, `WhatsMyName`, `Hunter.io`, `Clearbit`, `Anymail Finder`, `Holehe`, `SocialBlade`, `TweetDeck` | High-speed multi-threaded username search across 30+ platforms, email pattern discovery, domain MX checks, and registered service lookups. |
-| **Breach Intelligence** | `Have I Been Pwned (HIBP)`, `DeHashed`, `LeakCheck`, `Intelligence X`, `Snusbase`, `BreachDirectory` | K-anonymity SHA-1 privacy password checks (no raw password sent) and query engines for compromised credential databases. |
-| **GEOINT & IMINT** | `ExifTool`, `FOCA`, `Google Lens`, `Yandex Images`, `TinEye`, `PimEyes`, `FaceCheck.ID`, `Google Earth Pro`, `Sentinel Hub`, `DualMaps`, `SunCalc` | Image EXIF metadata parsing, GPS latitude/longitude extraction, instant Google Maps / OpenStreetMap pin generation, facial recognition links, and shadow solar calculators. |
-| **Dark Web & Web Archives** | `Ahmia`, `OnionSearch`, `Torry`, `Wayback Machine (Archive.org)`, `Archive.today` | Real-time CDX API querying for historical snapshots and .onion dark web search engines. |
-| **Code & Secret Leaks** | `grep.app`, `Sourcegraph`, `PublicWWW`, `Gitleaks`, `TruffleHog` | Public code footprint searches, API key discovery engines, and local repository secret scanning. |
+| **Domain & Network Intelligence** | `crt.sh`, `AlienVault OTX`, `HackerTarget`, `Shodan`, `Censys`, `WHOIS/RDAP`, `IP-API`, `DNS` | Multi-source subdomain discovery, active A-record host resolution, CNAME subdomain takeover vulnerability auditing, IP Geolocation & ASN discovery, SSL/TLS certificate validity checks, SPF/DMARC domain spoofing audits, and HTTP security header analysis. |
+| **Identity & SOCMINT** | `Sherlock`, `Holehe`, `Maigret`, `WhatsMyName`, `Gravatar`, `Hunter.io`, `Epieos`, `SocialBlade` | Concurrent username search across 40+ platforms with redirect and soft-404 false-positive mitigation, email format & MX verification, Gravatar MD5 profile detection, and infostealer malware infection correlation. |
+| **Breach & Threat Intelligence** | `Have I Been Pwned (HIBP)`, `Hudson Rock Cavalier`, `DeHashed`, `LeakCheck`, `Snusbase` | K-anonymity SHA-1 privacy password checks (no raw passwords transmitted), and free, real-time infostealer malware compromise intelligence (RedLine, Vidar, Lumma). |
+| **GEOINT & IMINT** | `ExifTool`, `Leaflet.js`, `Google Lens`, `Yandex Images`, `TinEye`, `PimEyes`, `FaceCheck.ID`, `SunCalc` | Image EXIF metadata parsing (camera model, lens, software tampering), GPS latitude/longitude extraction, automatic generation of local interactive Leaflet.js HTML map pins, and reverse image search toolkits. |
+| **Code & Secret Leaks** | `Native Regex Scanner`, `Gitleaks`, `TruffleHog`, `grep.app`, `Sourcegraph`, `PublicWWW` | Native pattern scanner for AWS keys, GitHub PATs, Google API keys, Slack tokens, Stripe keys, and Private Keys on local files/directories, plus code search engine queries. |
+| **Dark Web & Web Archives** | `Wayback Machine (CDX)`, `Tor SOCKS5`, `Ahmia`, `Torry`, `OnionSearch`, `DuckDuckGo Onion` | Historical snapshot extraction with sensitive file extension filtering (`.env`, `.sql`, `.bak`, `.pdf`, `.xls`), local Tor proxy status detection, and .onion search engines. |
 | **Visual Frameworks** | `Maltego`, `SpiderFoot`, `Recon-ng`, `OSINT Framework` | Launchers and deep links for top graph and automation frameworks. |
 
 ---
 
 ## 🚀 Installation on Kali Linux
 
-Clone the repository and run the automated installer. The installer updates package lists, installs all dependencies (`exiftool`, `whois`, `subfinder`, `theharvester`, `sherlock`, python dependencies), and creates a global `/usr/local/bin/osintall` command.
+Clone the repository and run the automated installer. The installer updates package lists, installs all dependencies (`exiftool`, `whois`, `subfinder`, `theharvester`, `sherlock`, `holehe`, `tor`), configures an isolated Python virtual environment, and creates a global `/usr/local/bin/osintall` command.
 
 ```bash
 # 1. Clone the repository
@@ -66,29 +67,34 @@ osintall
 ### 2. Direct CLI One-Liners
 
 ```bash
-# Domain & Network Reconnaissance (DNS, WHOIS, crt.sh Subdomains, Headers)
+# Full Domain Recon (DNS, Multi-Source Subdomains, IP Geolocation, SSL, SPF/DMARC, Headers)
 osintall -d example.com
 
-# SOCMINT: Multi-platform Username Scan
+# SOCMINT: Multi-platform Username Scan (40+ Platforms with False-Positive Filtering)
 osintall -u targetuser
 
-# Email Intelligence & Breach Lookups
+# Email Intelligence, Gravatar, MX, and Free Infostealer Compromise Check
 osintall -e target@company.com
 
-# Image EXIF Metadata & Embedded GPS Coordinates Extraction
+# Image EXIF Metadata & Standalone Offline Leaflet.js HTML Map Pin Generation
 osintall -f evidence_photo.jpg
 
 # Safe HIBP Password Leak Check (k-anonymity SHA-1 hash)
 osintall -p "TargetPassword123"
 
-# Query Historical Wayback Machine Snapshots
-osintall -w targetsite.com
+# Query Historical Wayback Machine Snapshots for Sensitive Files (.env, .sql, .bak, .pdf)
+osintall -w example.com --sensitive
 
-# Dark Web / .onion Search Query
-osintall --darkweb "target organization name"
-
-# Search Code Footprints (grep.app, Sourcegraph)
+# Native Regex Secret Scanner against Local Files, Directories, or Token Strings
 osintall -s "AKIAIOSFODNN7EXAMPLE"
+osintall --scan-path /path/to/project
+
+# Route All Network Queries Through Proxy (Burp Suite or Tor SOCKS5)
+osintall -d example.com --proxy "http://127.0.0.1:8080"
+osintall -d example.com --proxy "socks5://127.0.0.1:9050"
+
+# Dark Web / .onion Search Query & Tor Service Verification
+osintall --darkweb "target organization"
 
 # Display OSINT Frameworks & Graph Tools
 osintall --frameworks
@@ -96,9 +102,19 @@ osintall --frameworks
 
 ---
 
+## 📊 Executive HTML Dashboard & Reporting
+
+OSINTALL automatically compiles findings into:
+- **Dark-Mode HTML Dashboard**: `reports/osint_report_<target>_<timestamp>.html`
+  - Stat cards, security badges (SPF, DMARC, SSL), subdomain tables with live IP and CNAME takeover indicators, social profile pills, and infostealer malware alerts.
+- **Structured JSON**: `reports/osint_report_<target>_<timestamp>.json`
+- **Interactive Leaflet Map**: `reports/geoint_map_<target>_<timestamp>.html` (generated whenever GPS metadata is detected).
+
+---
+
 ## ⚙️ Configuration & API Keys
 
-OSINTALL works out-of-the-box for passive and unauthenticated OSINT. To enable advanced API querying (Shodan, Censys, Hunter.io, urlscan.io), edit `config/config.json`:
+OSINTALL works out-of-the-box with **zero API keys required** using passive intelligence engines and free endpoints (including Hudson Rock Cavalier). To enable optional authenticated features, edit `config/config.json`:
 
 ```json
 {
@@ -106,6 +122,7 @@ OSINTALL works out-of-the-box for passive and unauthenticated OSINT. To enable a
     "shodan": "YOUR_SHODAN_API_KEY",
     "censys_api_id": "YOUR_CENSYS_API_ID",
     "censys_api_secret": "YOUR_CENSYS_SECRET",
+    "haveibeenpwned": "YOUR_HIBP_API_KEY",
     "hunter_io": "YOUR_HUNTER_KEY",
     "urlscan_io": "YOUR_URLSCAN_KEY"
   }
@@ -114,37 +131,10 @@ OSINTALL works out-of-the-box for passive and unauthenticated OSINT. To enable a
 
 ---
 
-## 📤 How to Push to Your GitHub Account
-
-To upload this tool to your own GitHub profile:
-
-1. Create a new repository named `OSINTall` on [GitHub](https://github.com/new).
-2. Run the following commands in the `osintall` folder:
-
-```bash
-cd osintall
-git init
-git add .
-git commit -m "Initial release of OSINTall framework"
-git branch -M main
-git remote add origin https://github.com/AnonymousSOC/OSINTall.git
-git push -u origin main
-```
-
----
-
-## 📊 Report Generation
-
-OSINTALL automatically exports structured intelligence results to:
-- **JSON**: `reports/osint_report_<target>_<timestamp>.json`
-- **Dark-Mode HTML**: `reports/osint_report_<target>_<timestamp>.html`
-
----
-
 ## ⚠️ Legal & Ethical Disclaimer
 
 > [!CAUTION]
-> This tool is developed strictly for authorized security assessments, digital forensics, defensive research, and educational purposes. Always obtain proper authorization before conducting reconnaissance against systems and organizations you do not own.
+> This tool is developed strictly for authorized security assessments, digital forensics, defensive research, bug bounties, and educational purposes. Always obtain proper authorization before conducting reconnaissance against systems and organizations you do not own.
 
 ---
 
