@@ -66,6 +66,32 @@ def check_wayback_history(target_url: str, filter_sensitive: bool = False, limit
                         table.add_row(ts, orig[:45], type_str, snap_link)
 
                     console.print(table)
+
+                    # Parameter & Sensitive Path Mining
+                    mined_params = set()
+                    mined_admin_paths = set()
+                    for row in data[1:]:
+                        orig_url = row[2]
+                        if "?" in orig_url:
+                            query_part = orig_url.split("?", 1)[1]
+                            for param_pair in query_part.split("&"):
+                                if "=" in param_pair:
+                                    mined_params.add(param_pair.split("=")[0].strip())
+                        url_lower = orig_url.lower()
+                        for trigger in ["/admin", "/login", "/api/", "/swagger", "/graphql", "/actuator", "/dashboard"]:
+                            if trigger in url_lower:
+                                mined_admin_paths.add(orig_url.split("?")[0])
+
+                    if mined_params or mined_admin_paths:
+                        mine_table = Table(title="Mined Wayback Endpoints & Parameters (Bug Bounty Audit)", border_style="yellow")
+                        mine_table.add_column("Category", style="bold yellow", width=22)
+                        mine_table.add_column("Discovered Assets", style="white")
+                        if mined_admin_paths:
+                            mine_table.add_row("Admin / API Endpoints", "\n".join(list(mined_admin_paths)[:6]))
+                        if mined_params:
+                            mine_table.add_row("Discovered Parameters", ", ".join(sorted(list(mined_params))[:15]))
+                        console.print(mine_table)
+
                     return snapshots
                 else:
                     print_info("No snapshots matching sensitive file extension criteria found.")

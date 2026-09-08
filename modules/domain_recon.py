@@ -92,6 +92,28 @@ def get_ip_geolocation(ip: str) -> dict:
         pass
     return {}
 
+def query_internetdb(ip: str) -> dict:
+    """Queries Shodan's free InternetDB API for open ports, CPEs, hostnames, and CVE vulnerabilities."""
+    if not ip or ip in ("127.0.0.1", "0.0.0.0", "localhost"):
+        return {}
+    session = get_requests_session()
+    try:
+        url = f"https://internetdb.shodan.io/{ip}"
+        resp = session.get(url, timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            return {
+                "ip": ip,
+                "ports": data.get("ports", []),
+                "cpes": data.get("cpes", []),
+                "hostnames": data.get("hostnames", []),
+                "vulns": data.get("vulns", []),
+                "tags": data.get("tags", [])
+            }
+    except Exception:
+        pass
+    return {}
+
 def audit_email_security(domain: str, txt_records: list) -> dict:
     """Audits SPF and DMARC configurations to assess email spoofing vulnerability."""
     audit = {
@@ -344,12 +366,77 @@ def check_http_headers(domain: str) -> dict:
                 "final_url": resp.url,
                 "server": resp.headers.get("Server", "Unknown"),
                 "powered_by": resp.headers.get("X-Powered-By", "None"),
-                "security_headers": sec_headers
+                "security_headers": sec_headers,
+                "raw_headers": dict(resp.headers),
+                "html_sample": resp.text[:25000]
             }
             break
         except Exception:
             continue
     return headers_info
+
+def fingerprint_tech_stack(domain: str, headers: dict, html_text: str = "") -> list:
+    """Fingerprints CMS, web frameworks, web servers, and CDN/WAF technologies."""
+    detected = []
+    headers_lower = {k.lower(): v.lower() for k, v in headers.items()}
+    html_lower = html_text.lower() if html_text else ""
+
+    # CMS & Platforms
+    if "/wp-content/" in html_lower or "/wp-includes/" in html_lower or "wordpress" in headers_lower.get("link", ""):
+        detected.append({"name": "WordPress", "category": "CMS", "evidence": "wp-content/includes paths detected"})
+    if "cdn.shopify.com" in html_lower or "shopify" in html_lower:
+        detected.append({"name": "Shopify", "category": "E-Commerce", "evidence": "Shopify assets detected"})
+    if "joomla" in html_lower or "joomla!" in headers_lower.get("meta", ""):
+        detected.append({"name": "Joomla", "category": "CMS", "evidence": "Joomla signature detected"})
+    if "drupal" in html_lower or "drupal.settings" in html_lower:
+        detected.append({"name": "Drupal", "category": "CMS", "evidence": "Drupal scripts detected"})
+    if "ghost" in headers_lower.get("x-powered-by", "") or "ghost" in html_lower:
+        detected.append({"name": "Ghost", "category": "CMS", "evidence": "Ghost blogging engine"})
+    if "wix.com" in html_lower:
+        detected.append({"name": "Wix", "category": "Website Builder", "evidence": "Wix infrastructure detected"})
+
+    # Web Servers & CDN / WAF
+    server = headers_lower.get("server", "")
+    if "cloudflare" in server or "cf-ray" in headers_lower:
+        detected.append({"name": "Cloudflare", "category": "CDN / WAF", "evidence": "Cloudflare Server / CF-Ray Header"})
+    if "cloudfront" in server or "x-amz-cf-id" in headers_lower:
+        detected.append({"name": "AWS CloudFront", "category": "CDN", "evidence": "Amazon CloudFront headers"})
+    if "nginx" in server:
+        detected.append({"name": "Nginx", "category": "Web Server", "evidence": f"Server: {headers.get('Server')}"})
+    if "apache" in server:
+        detected.append({"name": "Apache HTTP Server", "category": "Web Server", "evidence": f"Server: {headers.get('Server')}"})
+    if "litespeed" in server:
+        detected.append({"name": "LiteSpeed", "category": "Web Server", "evidence": "LiteSpeed Server Header"})
+    if "microsoft-iis" in server:
+        detected.append({"name": "Microsoft IIS", "category": "Web Server", "evidence": f"Server: {headers.get('Server')}"})
+
+    # Frontend Frameworks
+    if "_next" in html_lower or "__next" in html_lower:
+        detected.append({"name": "Next.js", "category": "React Framework", "evidence": "Next.js hydration attributes"})
+    if "react" in html_lower or "react-dom" in html_lower:
+        detected.append({"name": "React", "category": "Frontend Framework", "evidence": "React DOM markers"})
+    if "vue" in html_lower or "vue.js" in html_lower:
+        detected.append({"name": "Vue.js", "category": "Frontend Framework", "evidence": "Vue.js bundle markers"})
+    if "ng-version" in html_lower or "angular" in html_lower:
+        detected.append({"name": "Angular", "category": "Frontend Framework", "evidence": "Angular ng-version attribute"})
+    if "jquery" in html_lower:
+        detected.append({"name": "jQuery", "category": "JavaScript Library", "evidence": "jQuery script detected"})
+    if "bootstrap" in html_lower:
+        detected.append({"name": "Bootstrap", "category": "CSS Framework", "evidence": "Bootstrap CSS/JS detected"})
+    if "tailwind" in html_lower:
+        detected.append({"name": "Tailwind CSS", "category": "CSS Framework", "evidence": "Tailwind CSS utility classes"})
+
+    # Backend / Languages
+    powered_by = headers_lower.get("x-powered-by", "")
+    if "php" in powered_by or ".php" in html_lower:
+        detected.append({"name": "PHP", "category": "Programming Language", "evidence": f"X-Powered-By: {headers.get('X-Powered-By', 'PHP')}"})
+    if "asp.net" in powered_by or "x-aspnet-version" in headers_lower:
+        detected.append({"name": "ASP.NET", "category": "Web Framework", "evidence": "ASP.NET header detected"})
+    if "express" in powered_by:
+        detected.append({"name": "Express / Node.js", "category": "Web Framework", "evidence": "X-Powered-By: Express"})
+
+    return detected
+
 
 def query_shodan_api(ip_or_domain: str, api_key: str) -> dict:
     """Queries Shodan API if an API key is provided."""
@@ -402,6 +489,8 @@ def run_domain_recon(domain: str) -> dict:
         "target": domain,
         "dns": {},
         "ip_geolocation": [],
+        "internetdb": [],
+        "tech_stack": [],
         "email_security": {},
         "ssl_certificate": {},
         "whois": {},
@@ -446,6 +535,30 @@ def run_domain_recon(domain: str) -> dict:
                 isp_org = f"{g['isp']} ({g['org']})" if g['isp'] != g['org'] else g['isp']
                 geo_table.add_row(g["ip"], loc, isp_org, str(g["asn"]))
             console.print(geo_table)
+
+        # Query Shodan InternetDB (Zero-Key free open ports & CVE vulnerabilities)
+        print_info("Querying Shodan InternetDB for open ports & known vulnerabilities (Zero-Key)...")
+        for ip in primary_ips[:3]:
+            idb = query_internetdb(ip)
+            if idb:
+                results["internetdb"].append(idb)
+
+        if results["internetdb"]:
+            for idb_entry in results["internetdb"]:
+                ip = idb_entry.get("ip")
+                ports = idb_entry.get("ports", [])
+                cpes = idb_entry.get("cpes", [])
+                vulns = idb_entry.get("vulns", [])
+                if ports or vulns:
+                    idb_table = Table(title=f"Shodan InternetDB Telemetry ({ip})", border_style="yellow")
+                    idb_table.add_column("Property", style="bold cyan", width=22)
+                    idb_table.add_column("Discovered Details", style="white")
+                    idb_table.add_row("Open Ports", ", ".join(map(str, sorted(ports))) if ports else "None detected")
+                    if cpes:
+                        idb_table.add_row("Software (CPEs)", "\n".join(cpes[:5]))
+                    if vulns:
+                        idb_table.add_row("CVE Vulnerabilities", f"[bold red]{', '.join(vulns[:8])}[/]" + (f" (+{len(vulns)-8} more)" if len(vulns) > 8 else ""))
+                    console.print(idb_table)
 
     # 3. Email Security Audit (SPF & DMARC)
     txt_records = results["dns"].get("TXT", [])
@@ -544,6 +657,27 @@ def run_domain_recon(domain: str) -> dict:
             status_style = "[bold green]Present[/]" if sec_val not in ["Missing", None] else "[bold red]Missing[/]"
             header_table.add_row(sec_name, f"{sec_val} ({status_style})")
         console.print(header_table)
+
+    # 8. Technology Stack & CMS Fingerprinting
+    print_info("Fingerprinting Web Technologies & Frameworks...")
+    for proto, hdata in results["http_headers"].items():
+        raw_h = hdata.get("raw_headers", {})
+        html_s = hdata.get("html_sample", "")
+        detected_tech = fingerprint_tech_stack(domain, raw_h, html_s)
+        for dt in detected_tech:
+            if not any(x["name"] == dt["name"] for x in results["tech_stack"]):
+                results["tech_stack"].append(dt)
+
+    if results["tech_stack"]:
+        tech_table = Table(title=f"Detected Web Technologies & Infrastructure ({domain})", border_style="green")
+        tech_table.add_column("Technology", style="bold green", width=22)
+        tech_table.add_column("Category", style="cyan", width=22)
+        tech_table.add_column("Detection Evidence", style="white")
+        for t in results["tech_stack"]:
+            tech_table.add_row(t["name"], t["category"], t["evidence"])
+        console.print(tech_table)
+    else:
+        print_info("No obvious signature markers identified for CMS or major web frameworks.")
 
     # 8. Active Shodan API Query (if configured)
     shodan_key = config.get("api_keys", {}).get("shodan", "")

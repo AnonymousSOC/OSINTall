@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# OSINTALL Installer for Kali Linux & Debian-based Distributions (v2.0)
+# OSINTALL Installer for Kali Linux & Debian-based Distributions (v2.1)
 # GitHub: https://github.com/AnonymousSOC/OSINTall
 # ==============================================================================
 
@@ -27,7 +27,7 @@ cat << "EOF"
  ╚██████╔╝███████║██║██║ ╚████║   ██║   ██║  ██║███████╗███████╗
   ╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝
 EOF
-echo -e "${PURPLE}  [!] Automated Installer for Kali Linux & Security Distributions (v2.0)${NC}"
+echo -e "${PURPLE}  [!] Automated Installer for Kali Linux & Security Distributions (v2.1)${NC}"
 echo -e "${BLUE}  ================================================================${NC}"
 echo ""
 
@@ -80,6 +80,7 @@ OPTIONAL_KALI_TOOLS=(
     "theharvester"
     "sherlock"
     "holehe"
+    "phoneinfoga"
     "amass"
     "spiderfoot"
     "gitleaks"

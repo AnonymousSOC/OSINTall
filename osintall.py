@@ -58,6 +58,7 @@ from modules.banner import (
 )
 from modules.domain_recon import run_domain_recon
 from modules.socmint import scan_username, analyze_email
+from modules.phone_recon import scan_phone_number
 from modules.breach_intel import check_hibp_password_hash, check_email_breaches, check_infostealer_exposure
 from modules.geoint_meta import extract_exif
 from modules.darkweb_archives import check_wayback_history, search_darkweb, show_osint_frameworks
@@ -73,14 +74,15 @@ def interactive_menu():
         menu_table.add_column("Module Category", style="bold white", width=36)
         menu_table.add_column("Capabilities", style="dim cyan")
 
-        menu_table.add_row("1", "🌐 Domain & Network Intelligence", "WHOIS, DNS, Subdomains (crt.sh/AlienVault/HackerTarget), IP Geo, SSL, Headers")
+        menu_table.add_row("1", "🌐 Domain & Network Intelligence", "WHOIS, DNS, Subdomains, IP Geo, Shodan InternetDB, SSL, Headers")
         menu_table.add_row("2", "👤 Identity & SOCMINT", "Multi-platform Username Scanner (40+ sites), Email Recon, Gravatar, Holehe")
-        menu_table.add_row("3", "🛡️ Breach Intelligence & Leaks", "HIBP k-anonymity Passwords, Hudson Rock Infostealer Malware Telemetry")
-        menu_table.add_row("4", "📸 GEOINT & File Metadata", "EXIF/GPS, Device/Camera info, Offline Leaflet.js HTML Map Pin, Reverse Image")
-        menu_table.add_row("5", "🏛️ Dark Web & Historical Archives", "Wayback Machine CDX (Sensitive file filter), Tor SOCKS Proxy Check, Ahmia")
-        menu_table.add_row("6", "💻 Code Repos & Secret Detection", "Native Regex Scanner (AWS, PAT, Slack, Stripe, Keys), Gitleaks/TruffleHog")
-        menu_table.add_row("7", "🕸️ Link Analysis Frameworks", "Maltego, SpiderFoot, Recon-ng, OSINT Framework directories")
-        menu_table.add_row("8", "⚡ Full Automated Recon Suite", "Run Full Domain or Target Recon & build Executive HTML Dashboard")
+        menu_table.add_row("3", "📱 Phone Number Intelligence (TELINT)", "Carrier & Telecom Lookup, E.164 Formats, WhatsApp/Telegram Footprints")
+        menu_table.add_row("4", "🛡️ Breach Intelligence & Leaks", "HIBP k-anonymity Passwords, Hudson Rock Infostealer Malware Telemetry")
+        menu_table.add_row("5", "📸 GEOINT & File Metadata", "EXIF/GPS, Device/Camera info, Offline Leaflet.js HTML Map Pin, Reverse Image")
+        menu_table.add_row("6", "🏛️ Dark Web & Historical Archives", "Wayback CDX Sensitive Endpoint Mining, Tor SOCKS Proxy Check, Ahmia")
+        menu_table.add_row("7", "💻 Code Repos & Secret Detection", "Native Regex Scanner (AWS, PAT, Slack, Stripe, Keys), Gitleaks/TruffleHog")
+        menu_table.add_row("8", "🕸️ Link Analysis Frameworks", "Maltego, SpiderFoot, Recon-ng, OSINT Framework directories")
+        menu_table.add_row("9", "⚡ Full Automated Recon Suite", "Run Full Domain, Phone or Target Recon & build Executive HTML Dashboard")
         menu_table.add_row("0", "❌ Exit", "Close OSINTALL")
 
         console.print(menu_table)
@@ -115,6 +117,15 @@ def interactive_menu():
                         save_html_report(res, email)
 
         elif choice == "3":
+            phone = Prompt.ask("[bold yellow]Enter target phone number[/] (e.g. +14155552671)")
+            if phone:
+                res = scan_phone_number(phone)
+                save_option = Prompt.ask("Save executive report to disk? (y/n)", choices=["y", "n"], default="y")
+                if save_option == "y":
+                    save_json_report(res, phone)
+                    save_html_report(res, phone)
+
+        elif choice == "4":
             sub_type = Prompt.ask("Select Breach check", choices=["email", "password", "domain"], default="email")
             if sub_type == "password":
                 pwd = Prompt.ask("[bold yellow]Enter password to check[/]", password=True)
@@ -130,12 +141,12 @@ def interactive_menu():
                     res = check_email_breaches(email)
                     save_json_report(res, email)
 
-        elif choice == "4":
+        elif choice == "5":
             filepath = Prompt.ask("[bold yellow]Enter path to image/file[/]")
             if filepath:
                 extract_exif(filepath)
 
-        elif choice == "5":
+        elif choice == "6":
             sub = Prompt.ask("Select Archive or Dark Web", choices=["wayback", "darkweb"], default="wayback")
             if sub == "wayback":
                 target = Prompt.ask("[bold yellow]Enter URL / Domain[/]")
@@ -147,7 +158,7 @@ def interactive_menu():
                 if query:
                     search_darkweb(query)
 
-        elif choice == "6":
+        elif choice == "7":
             action = Prompt.ask("Scan mode", choices=["query", "local_path"], default="query")
             if action == "local_path":
                 path = Prompt.ask("[bold yellow]Enter local file or repository path to scan[/]")
@@ -158,26 +169,31 @@ def interactive_menu():
                 if query:
                     search_code_engines(query)
 
-        elif choice == "7":
+        elif choice == "8":
             show_osint_frameworks()
 
-        elif choice == "8":
-            target = Prompt.ask("[bold yellow]Enter Target Domain or Username for Full Recon[/]")
+        elif choice == "9":
+            target = Prompt.ask("[bold yellow]Enter Target (Domain, Phone, or Username) for Full Recon[/]")
             if target:
-                clean_target = re.sub(r"^https?://", "", target.strip().lower()).split("/")[0]
-                if "." in clean_target:
-                    print_info(f"Running automated reconnaissance on Domain: [bold cyan]{clean_target}[/]")
-                    domain_data = run_domain_recon(clean_target)
-                    snapshots = check_wayback_history(clean_target, limit=10)
-                    infostealer = check_infostealer_exposure(clean_target)
+                clean_target = target.strip()
+                if clean_target.startswith("+") or (clean_target.replace("-", "").isdigit() and len(clean_target) >= 7):
+                    print_info(f"Running automated reconnaissance on Phone Number: [bold cyan]{clean_target}[/]")
+                    phone_data = scan_phone_number(clean_target)
+                    save_json_report(phone_data, clean_target)
+                    save_html_report(phone_data, clean_target)
+                elif "." in clean_target:
+                    clean_domain = re.sub(r"^https?://", "", clean_target.lower()).split("/")[0]
+                    print_info(f"Running automated reconnaissance on Domain: [bold cyan]{clean_domain}[/]")
+                    domain_data = run_domain_recon(clean_domain)
+                    snapshots = check_wayback_history(clean_domain, limit=10)
+                    infostealer = check_infostealer_exposure(clean_domain)
                     
-                    # Combine all data into single executive payload
                     combined = domain_data
                     combined["wayback_snapshots"] = snapshots
                     combined["infostealer"] = infostealer
 
-                    save_json_report(combined, clean_target)
-                    save_html_report(combined, clean_target)
+                    save_json_report(combined, clean_domain)
+                    save_html_report(combined, clean_domain)
                 else:
                     print_info(f"Running automated reconnaissance on Username: [bold cyan]{clean_target}[/]")
                     user_data = scan_username(clean_target)
@@ -214,6 +230,7 @@ Examples:
     parser.add_argument("-d", "--domain", help="Target domain for Network & DNS reconnaissance")
     parser.add_argument("-u", "--user", help="Target username for SOCMINT profile discovery")
     parser.add_argument("-e", "--email", help="Target email for verification and breach discovery")
+    parser.add_argument("-n", "--phone", help="Target international phone number for TELINT reconnaissance (e.g. +14155552671)")
     parser.add_argument("-f", "--file", help="File / Image path for EXIF metadata & GPS extraction")
     parser.add_argument("-p", "--password", help="Check if password exists in public HIBP breaches")
     parser.add_argument("-w", "--wayback", help="Target domain/URL for historical Wayback Machine snapshots")
@@ -268,6 +285,13 @@ Examples:
             save_json_report(combined, args.email)
         if args.output in ["html", "all"]:
             save_html_report(combined, args.email)
+
+    if args.phone:
+        res_phone = scan_phone_number(args.phone)
+        if args.output in ["json", "all"]:
+            save_json_report(res_phone, args.phone)
+        if args.output in ["html", "all"]:
+            save_html_report(res_phone, args.phone)
 
     if args.file:
         extract_exif(args.file)
