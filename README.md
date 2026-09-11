@@ -77,34 +77,130 @@ Launch the full-featured interactive Rich terminal console by running `osintall`
 
 ---
 
-## 🚀 Installation & Update Guide
+## 🚀 Complete Installation Guide
 
-### 🐧 Fresh Installation on Kali Linux / Debian
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/AnonymousSOC/OSINTall.git
-
-# 2. Navigate into the directory
-cd OSINTall
-
-# 3. Make installer executable & run as root
-chmod +x install.sh
-sudo ./install.sh
-```
-
-The installer automatically:
-1. Updates package lists (`apt update`).
-2. Installs required system binaries (`python3-venv`, `libimage-exiftool-perl`, `whois`, `dnsutils`, `curl`, `wget`, `jq`).
-3. Installs integrated Kali tools (`subfinder`, `theharvester`, `sherlock`, `holehe`, `phoneinfoga`, `tor`).
-4. Creates an isolated Python virtual environment (`.venv`) and installs all Python dependencies.
-5. Symlinks `/usr/local/bin/osintall` so the tool is accessible globally from any shell.
+OSINTALL supports automated installation on Kali Linux/Debian, manual installation via Python virtual environments across all Linux distributions, and cross-platform installation on Windows and macOS.
 
 ---
 
-### 🔄 Updating an Existing Clone on Kali Linux
+### 📋 Prerequisites
 
-If you already have OSINTall cloned on your machine, pull the latest release cleanly:
+Before installing, ensure your system has:
+- **Git** installed (`git --version`)
+- **Python 3.8 or higher** (`python3 --version` or `python --version`)
+- **Pip** package manager (`pip3 --version` or `pip --version`)
+
+---
+
+### 🐧 Method 1: Automated Installer (Recommended for Kali Linux & Debian)
+
+The automated installer configures system packages, external OSINT binaries, isolated Python virtual environments, and global shell access (`/usr/local/bin/osintall`).
+
+```bash
+# Step 1: Clone the repository from GitHub
+git clone https://github.com/AnonymousSOC/OSINTall.git
+
+# Step 2: Navigate into the project directory
+cd OSINTall
+
+# Step 3: Grant execution permissions to the installer script
+chmod +x install.sh
+
+# Step 4: Run the installer with root privileges
+sudo ./install.sh
+```
+
+**What the installer does automatically:**
+1. Updates system package lists (`apt update`).
+2. Installs required system binaries: `python3-venv`, `libimage-exiftool-perl`, `whois`, `dnsutils`, `curl`, `wget`, `jq`.
+3. Installs integrated Kali tools: `subfinder`, `theharvester`, `sherlock`, `holehe`, `phoneinfoga`, `tor`.
+4. Creates an isolated Python virtual environment (`.venv`) to prevent Debian/Kali PEP 668 externally-managed errors.
+5. Installs all required Python dependencies from `requirements.txt`.
+6. Symlinks `/usr/local/bin/osintall` so you can launch OSINTALL from **any terminal location** simply by typing `osintall`.
+
+---
+
+### 🐧 Method 2: Manual Linux Installation (Ubuntu / Parrot OS / BlackArch / Any Linux)
+
+If you are on a non-Debian distribution or prefer not to use `sudo ./install.sh`:
+
+```bash
+# Step 1: Clone the repository
+git clone https://github.com/AnonymousSOC/OSINTall.git
+cd OSINTall
+
+# Step 2: Install system libraries (Ubuntu/Debian/Parrot)
+sudo apt update && sudo apt install -y python3 python3-pip python3-venv git libimage-exiftool-perl whois dnsutils
+
+# Step 3: Create and activate an isolated Python virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Step 4: Upgrade pip and install all Python dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Step 5: Run OSINTALL
+python3 osintall.py
+```
+
+---
+
+### 🪟 Method 3: Windows Installation (PowerShell / Command Prompt)
+
+OSINTALL natively supports Windows with full Unicode Rich terminal formatting:
+
+```powershell
+# Step 1: Clone the repository
+git clone https://github.com/AnonymousSOC/OSINTall.git
+cd OSINTall
+
+# Step 2: Create a Python virtual environment
+python -m venv .venv
+
+# Step 3: Activate the virtual environment
+# In PowerShell:
+.venv\Scripts\Activate.ps1
+# Or in Command Prompt (cmd.exe):
+# .venv\Scripts\activate.bat
+
+# Step 4: Upgrade pip and install dependencies
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+
+# Step 5: Launch OSINTALL
+python osintall.py
+```
+
+---
+
+### 🍎 Method 4: macOS Installation
+
+```bash
+# Step 1: Install system tools via Homebrew (if not already installed)
+brew install python git exiftool whois
+
+# Step 2: Clone the repository
+git clone https://github.com/AnonymousSOC/OSINTall.git
+cd OSINTall
+
+# Step 3: Set up Python virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Step 4: Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Step 5: Launch OSINTALL
+python3 osintall.py
+```
+
+---
+
+### 🔄 Updating an Existing Installation on Kali Linux
+
+If you have an existing clone of OSINTall, update to the latest release with one command sequence:
 
 ```bash
 cd ~/OSINTall
@@ -112,6 +208,20 @@ git fetch origin
 git reset --hard origin/main
 chmod +x install.sh
 sudo ./install.sh
+```
+
+---
+
+### ✅ Post-Installation Verification
+
+To verify that OSINTALL is properly installed and accessible:
+
+```bash
+# Verify CLI help menu
+osintall --help
+
+# Or launch the interactive terminal console
+osintall
 ```
 
 ---
