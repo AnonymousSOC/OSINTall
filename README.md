@@ -107,8 +107,10 @@ cd OSINTall
 chmod +x install.sh
 
 # Step 4: Run the installer with root privileges
-sudo ./install.sh
-```
+sudo ./install.sh  OR
+first ---->sudo su
+then------>install.sh
+```  
 
 **What the installer does automatically:**
 1. Updates system package lists (`apt update`).
