@@ -1,6 +1,6 @@
 {
   "settings": {
-    "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0 OSINTALL/1.0",
+    "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0 OSINTALL/2.2",
     "request_timeout_seconds": 8,
     "max_threads": 25,
     "save_reports_by_default": true,
