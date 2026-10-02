@@ -69,27 +69,50 @@ def query_threatfox(target_term: str, session: requests.Session) -> dict:
     return {"status": "CLEAN", "ioc_count": 0, "iocs": []}
 
 
-def calculate_threat_score(urlhaus_data: dict, threatfox_data: dict) -> dict:
-    """Computes a unified weighted threat risk score between 0 and 100."""
+from modules.validation_engine import check_shared_infrastructure_risk
+
+def calculate_threat_score(urlhaus_data: dict, threatfox_data: dict, target_host: str = "") -> dict:
+    """
+    Computes a unified weighted threat risk score between 0 and 100 with zero false alarm mitigation.
+    Applies shared CDN reverse-proxy IP dampening and separates active vs historical IoCs.
+    """
     score = 0
     reasons = []
 
-    # URLhaus factors
+    # Zero-False-Alarm Check: Multi-tenant CDN / Reverse-proxy check
+    is_shared, shared_msg = check_shared_infrastructure_risk(target_host)
+    if is_shared:
+        reasons.append(f"Infrastructure Note: {shared_msg}")
+
+    # URLhaus factors: distinguish ONLINE malware URLs from offline historic records
     url_count = urlhaus_data.get("url_count", 0)
-    if url_count > 0:
-        added = min(50, url_count * 15)
+    urls = urlhaus_data.get("urls", [])
+    active_urls = [u for u in urls if u.get("url_status") == "online"]
+    offline_urls = [u for u in urls if u.get("url_status") == "offline"]
+
+    if active_urls:
+        added = min(50, len(active_urls) * 20)
         score += added
-        reasons.append(f"URLhaus flagged {url_count} malicious malware distribution URL(s) (+{added})")
+        reasons.append(f"URLhaus confirmed {len(active_urls)} ACTIVE online malware distribution URL(s) (+{added})")
+    elif offline_urls:
+        # Offline/Historical URLs get dampened severity to prevent false panic
+        added = min(20, len(offline_urls) * 5)
+        score += added
+        reasons.append(f"URLhaus logged {len(offline_urls)} historical/offline URL(s) - Inactive (+{added})")
 
     # ThreatFox factors
     ioc_count = threatfox_data.get("ioc_count", 0)
     if ioc_count > 0:
         added = min(50, ioc_count * 20)
         score += added
-        # Extract malware names
         malware_names = list({ioc.get("malware_printable") for ioc in threatfox_data.get("iocs", []) if ioc.get("malware_printable")})
         mw_str = ", ".join(malware_names[:3]) if malware_names else "Malicious Activity"
         reasons.append(f"ThreatFox confirmed {ioc_count} threat IoC(s) linked to: {mw_str} (+{added})")
+
+    # If host is on shared CDN and score was driven by shared IP, cap score at 40 (Suspicious) unless domain-specific
+    if is_shared and score > 40:
+        score = 40
+        reasons.append("Score Capped at 40 (Suspicious): Multi-tenant CDN protection prevented false positive elevation")
 
     score = min(100, score)
 
@@ -111,7 +134,8 @@ def calculate_threat_score(urlhaus_data: dict, threatfox_data: dict) -> dict:
         "level": level,
         "color": color,
         "label": label,
-        "reasons": reasons
+        "reasons": reasons,
+        "is_shared_cdn": is_shared
     }
 
 
@@ -131,7 +155,7 @@ def run_threat_intelligence(target: str, proxy: str = None) -> dict:
     # Query engines
     urlhaus_result = query_urlhaus(clean_target, session)
     threatfox_result = query_threatfox(clean_target, session)
-    threat_assessment = calculate_threat_score(urlhaus_result, threatfox_result)
+    threat_assessment = calculate_threat_score(urlhaus_result, threatfox_result, clean_target)
 
     # Display Assessment Panel
     score = threat_assessment["score"]

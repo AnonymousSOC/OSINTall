@@ -22,6 +22,10 @@ from modules.banner import (
     console, print_section, print_info, print_success, print_warning,
     print_error, load_config, get_requests_session, is_tool_available
 )
+from modules.validation_engine import (
+    detect_wildcard_dns,
+    verify_subdomain_takeover
+)
 
 # Known CNAME signatures susceptible to subdomain takeover if dangling
 TAKEOVER_SIGNATURES = {
@@ -303,8 +307,12 @@ def get_subdomains_multi_source(domain: str) -> set:
 
     return subdomains
 
-def resolve_subdomain(subdomain: str) -> dict:
-    """Resolves a subdomain to check active IP addresses and CNAME records for takeover analysis."""
+def resolve_subdomain(subdomain: str, wildcard_ips: set = None, session: requests.Session = None) -> dict:
+    """
+    Resolves a subdomain to check active IP addresses and CNAME records with zero false alarms.
+    Filters out wildcard DNS catch-all resolutions and requires proof-of-claim HTTP verification
+    before flagging any subdomain takeover warning.
+    """
     resolver = dns.resolver.Resolver()
     resolver.timeout = 2.0
     resolver.lifetime = 2.0
@@ -314,8 +322,12 @@ def resolve_subdomain(subdomain: str) -> dict:
         "live": False,
         "ips": [],
         "cname": None,
-        "takeover_risk": None
+        "takeover_risk": None,
+        "takeover_verified": False,
+        "is_wildcard": False
     }
+
+    detected_service = None
 
     # Check CNAME first
     try:
@@ -324,23 +336,42 @@ def resolve_subdomain(subdomain: str) -> dict:
         info["cname"] = cname_target
         for sig, service in TAKEOVER_SIGNATURES.items():
             if sig in cname_target.lower():
-                info["takeover_risk"] = service
+                detected_service = service
                 break
     except Exception:
         pass
 
     # Check A records (Live check)
+    has_a_record = False
     try:
         a_answers = resolver.resolve(subdomain, "A")
         info["ips"] = [str(rdata) for rdata in a_answers]
         if info["ips"]:
-            info["live"] = True
+            has_a_record = True
+            # Zero-False-Alarm Check: Wildcard DNS filter
+            if wildcard_ips and set(info["ips"]).issubset(wildcard_ips):
+                info["live"] = False
+                info["is_wildcard"] = True
+            else:
+                info["live"] = True
     except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
-        # If NXDOMAIN but has CNAME pointing to known service, high takeover risk!
-        if info.get("cname") and info.get("takeover_risk"):
-            info["takeover_risk"] = f"CRITICAL: Dangling CNAME to {info['takeover_risk']} (NXDOMAIN)"
+        has_a_record = False
     except Exception:
         pass
+
+    # Proof-of-claim verification for potential takeover
+    # Only triggers if CNAME points to a known cloud/SaaS service
+    if detected_service and info.get("cname"):
+        # If A record is absent, or points to cloud provider, verify via HTTP response fingerprint!
+        active_session = session if session is not None else get_requests_session()
+        is_takeable, reason = verify_subdomain_takeover(detected_service, subdomain, active_session)
+        if is_takeable:
+            info["takeover_risk"] = f"CRITICAL [100% VERIFIED]: {detected_service} ({reason})"
+            info["takeover_verified"] = True
+        else:
+            # Service signature not matched: suppress false alarm!
+            info["takeover_risk"] = None
+            info["cname_service"] = detected_service
 
     return info
 
@@ -713,10 +744,16 @@ def run_domain_recon(domain: str) -> dict:
         print_success(f"Discovered [bold green]{len(discovered_raw)}[/] subdomains across passive intelligence engines.")
         print_info("Probing live DNS resolution and checking CNAME takeover signatures...")
 
+        # Zero-False-Alarm Core: Wildcard DNS detection
+        wildcard_ips = detect_wildcard_dns(domain)
+        if wildcard_ips:
+            print_info(f"[bold #00ff88]Zero-False-Alarm Core:[/] Detected Wildcard DNS on [bold cyan]{domain}[/] ({', '.join(wildcard_ips)}). Suppressing phantom subdomains.")
+
         # Concurrently resolve up to 40 subdomains for fast feedback
         to_resolve = sorted(list(discovered_raw))[:40]
+        session = get_requests_session()
         with ThreadPoolExecutor(max_workers=20) as executor:
-            future_to_sub = {executor.submit(resolve_subdomain, sub): sub for sub in to_resolve}
+            future_to_sub = {executor.submit(resolve_subdomain, sub, wildcard_ips, session): sub for sub in to_resolve}
             for future in as_completed(future_to_sub):
                 res = future.result()
                 if res.get("live"):

@@ -34,7 +34,7 @@ BANNER_ART = r"""
 """
 
 TAGLINE = "Universal Open Source Intelligence Reconnaissance Framework"
-VERSION = "v2.2.0 [CYBER-DECK]"
+VERSION = "v2.3.0 [ZERO-FALSE-ALARM]"
 
 # Global proxy setting (can be set via CLI --proxy)
 GLOBAL_PROXY = None

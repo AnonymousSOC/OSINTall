@@ -23,3 +23,8 @@ config/api_keys_local.json
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Office & temporary lock files
+~$*
+*.tmp
+
