@@ -33,8 +33,8 @@ BANNER_ART = r"""
  ╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝
 """
 
-TAGLINE = "Universal Open Source Intelligence Reconnaissance Framework | Kali Linux"
-VERSION = "v2.2.0"
+TAGLINE = "Universal Open Source Intelligence Reconnaissance Framework"
+VERSION = "v2.2.0 [CYBER-DECK]"
 
 # Global proxy setting (can be set via CLI --proxy)
 GLOBAL_PROXY = None
@@ -61,37 +61,57 @@ def get_requests_session() -> requests.Session:
     return session
 
 def show_banner():
-    """Prints the styled ASCII banner with author and version information."""
-    text_banner = Text(BANNER_ART, style="bold cyan")
+    """Prints the styled ASCII banner with Hollywood movie-hacker terminal aesthetics."""
+    text_banner = Text(BANNER_ART, style="bold #00f3ff")
+
     panel = Panel(
         text_banner,
-        subtitle=f"[bold yellow]{TAGLINE}[/] [bold magenta]({VERSION})[/]",
+        title="[bold #00ff88]╔══[ [bold #00f3ff]TOP SECRET // CYBER RECON HUD[/] [bold #00ff88]]══╗[/]",
+        title_align="center",
+        subtitle=f"[bold #00ff88]● DEFCON-1: ARMED[/]  [bold #ffb800]⚡ {TAGLINE} ⚡[/]  [bold #00f3ff]SYS: {VERSION}[/]",
         subtitle_align="center",
-        border_style="bright_blue",
+        border_style="bold #00ff88",
         padding=(0, 2)
     )
     console.print(panel)
-    console.print("[dim white]Platform: Kali Linux / Linux / Multi-Platform | Interactive TUI & Modular Recon[/dim white]\n")
 
-def print_section(title: str, icon: str = "🔍"):
-    """Prints a styled section header."""
-    console.print(f"\n[bold green]{icon} ─── [bold white]{title.upper()}[/] ──────────────────────────────[/]")
+    # Cyber diagnostics telemetry bar
+    telemetry = Table(show_header=False, box=None, padding=(0, 2), expand=False)
+    telemetry.add_column(style="dim #00f3ff")
+    telemetry.add_column(style="dim #00ff88")
+    telemetry.add_column(style="dim #ffb800")
+    telemetry.add_column(style="dim #bd93f9")
+    telemetry.add_row(
+        "▸ PLATFORM: KALI/MULTI-OS",
+        "▸ CLEARANCE: LEVEL-5 (TOP SECRET)",
+        "▸ CIPHER: AES-256-GCM",
+        "▸ RADAR: MULTI-VECTOR OSINT"
+    )
+    console.print(telemetry)
+    console.print()
+
+def print_section(title: str, icon: str = "◈"):
+    """Prints an elite movie-hacker styled cyber HUD section header."""
+    clean_title = title.upper()
+    console.print()
+    line_len = max(4, 60 - len(clean_title) - len(icon))
+    console.print(f"[bold #00ff88]╔══[ [bold #00f3ff]{icon}[/] [bold #ffffff]{clean_title}[/] [bold #00ff88]]" + ("═" * line_len) + "╗[/]")
 
 def print_info(msg: str):
     """Prints an informational message."""
-    console.print(f"[bold blue][*][/] {msg}")
+    console.print(f"[bold #00f3ff]⟨◈ SCAN ⟩[/] [bright_white]{msg}[/]")
 
 def print_success(msg: str):
     """Prints a success message."""
-    console.print(f"[bold green][+][/] {msg}")
+    console.print(f"[bold #00ff88]⟨✔ FOUND⟩[/] [bright_white]{msg}[/]")
 
 def print_warning(msg: str):
     """Prints a warning message."""
-    console.print(f"[bold yellow][!][/] {msg}")
+    console.print(f"[bold #ffb800]⟨⚡ ALERT⟩[/] [bright_white]{msg}[/]")
 
 def print_error(msg: str):
     """Prints an error message."""
-    console.print(f"[bold red][-][/] {msg}")
+    console.print(f"[bold #ff0055]⟨✘ ERROR⟩[/] [bright_white]{msg}[/]")
 
 def is_tool_available(tool_name: str) -> bool:
     """Cross-platform check for binary availability in system PATH."""

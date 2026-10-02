@@ -48,6 +48,7 @@ if MISSING_DEPS:
     sys.exit(1)
 
 # Third-party imports after verification
+from rich import box
 from rich.prompt import Prompt
 from rich.table import Table
 from rich.panel import Panel
@@ -79,30 +80,38 @@ def export_reports(data: dict, target_name: str, output_format: str = "all", inc
         save_maltego_csv(data, target_name)
 
 def interactive_menu():
-    """Renders the interactive rich CLI menu for OSINTALL."""
+    """Renders the interactive rich CLI menu for OSINTALL with movie-hacker HUD aesthetics."""
     while True:
         show_banner()
-        menu_table = Table(title="[bold yellow]OSINTALL - Main Intelligence Modules (v2.2)[/]", border_style="cyan")
-        menu_table.add_column("Option", style="bold green", width=8, justify="center")
-        menu_table.add_column("Module Category", style="bold white", width=38)
-        menu_table.add_column("Capabilities", style="dim cyan")
+        menu_table = Table(
+            title="[bold #00ff88]╔══[ [bold #00f3ff]CYBER INTEL COMMAND CONSOLE[/] [bold #00ff88]·[/] [bold #ffb800]MISSION CONTROL HUD[/] ]══╗[/]",
+            border_style="bold #00f3ff",
+            box=box.DOUBLE,
+            header_style="bold #00ff88 on #051a14",
+            show_lines=False
+        )
+        menu_table.add_column("CODE", style="bold #00ff88", width=8, justify="center")
+        menu_table.add_column("TACTICAL RECON MODULE", style="bold white", width=36)
+        menu_table.add_column("CAPABILITIES & INTELLIGENCE VECTORS", style="#58a6ff")
+        menu_table.add_column("STATUS", style="bold #00ff88", width=12, justify="center")
 
-        menu_table.add_row("1", "🌐 Domain & Network Intelligence", "WHOIS, DNS, Subdomains, IP Geo, Shodan InternetDB, SSL, Reverse IP")
-        menu_table.add_row("2", "👤 Identity & SOCMINT", "Multi-platform Username Scanner (40+ sites), Email Recon, Gravatar, Holehe")
-        menu_table.add_row("3", "📱 Phone Number Intelligence (TELINT)", "Carrier & Telecom Lookup, E.164 Formats, WhatsApp/Telegram Footprints")
-        menu_table.add_row("4", "☁️ Cloud Storage Recon (CLOUDINT)", "Audit AWS S3, Google Cloud Storage, Azure Blob for Public Data Leaks")
-        menu_table.add_row("5", "🛡️ Threat Intelligence & Reputation", "Abuse.ch URLhaus & ThreatFox Malware Telemetry, Automated Threat Scoring")
-        menu_table.add_row("6", "🔎 Targeted Search Dorks (DORKINT)", "Automated Google & GitHub Search Dorks for Confidential Docs & Leaks")
-        menu_table.add_row("7", "🚨 Breach Intelligence & Leaks", "HIBP k-anonymity Passwords, Hudson Rock Infostealer Malware Telemetry")
-        menu_table.add_row("8", "📸 GEOINT & File Metadata", "EXIF/GPS, Device/Camera info, Offline Leaflet.js HTML Map Pin, Reverse Image")
-        menu_table.add_row("9", "🏛️ Dark Web & Historical Archives", "Wayback CDX Sensitive Endpoint Mining, Tor SOCKS Proxy Check, Ahmia")
-        menu_table.add_row("10", "💻 Code Repos & Secret Detection", "Native Regex Scanner (AWS, PAT, Slack, Stripe, Keys), Gitleaks/TruffleHog")
-        menu_table.add_row("11", "🕸️ Link Analysis Frameworks", "Maltego, SpiderFoot, Recon-ng, OSINT Framework directories")
-        menu_table.add_row("12", "⚡ Full Automated Recon Suite", "Run Full Domain, Cloud, Threat & Target Recon & Export HTML/CSV/Maltego")
-        menu_table.add_row("0", "❌ Exit", "Close OSINTALL")
+        menu_table.add_row("[01]", "[bold #00f3ff]🌐 DOMAIN & NETWORK RECON[/]", "WHOIS, DNS, Subdomains, IP Geo, Shodan InternetDB, SSL, Reverse IP", "[bold #00ff88]● ARMED[/]")
+        menu_table.add_row("[02]", "[bold #00ff88]👤 IDENTITY & SOCMINT[/]", "Multi-platform Username Scanner (40+ sites), Email Recon, Gravatar, Holehe", "[bold #00ff88]● ARMED[/]")
+        menu_table.add_row("[03]", "[bold #ffb800]📱 TELEPHONE INTEL (TELINT)[/]", "Carrier & Telecom Lookup, E.164 Formats, WhatsApp/Telegram Footprints", "[bold #00ff88]● ARMED[/]")
+        menu_table.add_row("[04]", "[bold #bd93f9]☁️ MULTI-CLOUD AUDIT (CLOUDINT)[/]", "Audit AWS S3, Google Cloud Storage, Azure Blob for Public Data Leaks", "[bold #00ff88]● ARMED[/]")
+        menu_table.add_row("[05]", "[bold #ff0055]🛡️ THREAT INTEL & MALWARE IoC[/]", "Abuse.ch URLhaus & ThreatFox Malware Telemetry, Automated Threat Scoring", "[bold #00ff88]● ARMED[/]")
+        menu_table.add_row("[06]", "[bold #00f3ff]🔎 TARGETED SEARCH DORKS[/]", "Automated Google & GitHub Search Dorks for Confidential Docs & Leaks", "[bold #00ff88]● ARMED[/]")
+        menu_table.add_row("[07]", "[bold #ff0055]🚨 BREACH & EXPOSURE AUDIT[/]", "HIBP k-anonymity Passwords, Hudson Rock Infostealer Malware Telemetry", "[bold #00ff88]● ARMED[/]")
+        menu_table.add_row("[08]", "[bold #00ff88]📸 GEOINT & FILE METADATA[/]", "EXIF/GPS, Device/Camera info, Offline Leaflet.js HTML Map Pin, Reverse Image", "[bold #00ff88]● ARMED[/]")
+        menu_table.add_row("[09]", "[bold #bd93f9]🏛️ DARK WEB & CDX ARCHIVES[/]", "Wayback CDX Sensitive Endpoint Mining, Tor SOCKS Proxy Check, Ahmia", "[bold #00ff88]● ARMED[/]")
+        menu_table.add_row("[10]", "[bold #ffb800]💻 CODE SECRETS DETECTION[/]", "Native Regex Scanner (AWS, PAT, Slack, Stripe, Keys), Gitleaks/TruffleHog", "[bold #00ff88]● ARMED[/]")
+        menu_table.add_row("[11]", "[bold #00f3ff]🕸️ LINK ANALYSIS FRAMEWORKS[/]", "Maltego, SpiderFoot, Recon-ng, OSINT Framework directories", "[bold #00ff88]● ARMED[/]")
+        menu_table.add_row("[12]", "[bold #00ff88]⚡ FULL AUTOMATED RECON SUITE[/]", "Complete Domain, Cloud, Threat & Target Recon & Export HTML/CSV/Maltego", "[bold #00ff88]● EXECUTE[/]")
+        menu_table.add_row("[00]", "[bold #ff0055]❌ TERMINATE SESSION[/]", "Close and Exit OSINTALL Cyber Terminal", "[bold #ff0055]● EXIT[/]")
 
         console.print(menu_table)
-        choice = Prompt.ask("\n[bold cyan]osintall[/] > Select an option", default="1")
+        choice_raw = Prompt.ask("\n[bold #00ff88]root@cyber-grid[/]:[bold #00f3ff]~/recon[/][bold #00ff88] ❯❯ [/]", default="1")
+        choice = choice_raw.strip().lstrip("0") or "0"
 
         if choice == "1":
             domain = Prompt.ask("[bold yellow]Enter target domain[/] (e.g. example.com)")
